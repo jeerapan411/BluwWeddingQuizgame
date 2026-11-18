@@ -1,20 +1,29 @@
 # Wedding Quiz: คุณอาย & คุณดล (#EyeDonTheWEDDING)
 **วันแต่งงาน:** 20 พฤศจิกายน 2569
 
-ชุดคำถามเกมงานแต่งงานสำหรับนำเข้า Kahoot และใช้เปิดบนเวที
+ชุดคำถามเกมงานแต่งงานสำหรับนำเข้า Kahoot และภาพประกอบคำถามสุดน่ารักสำหรับเปิดบนเวที
 
 ---
 
-### 📂 รายการไฟล์ในโฟลเดอร์นี้:
-1. **`EyeDonTheWEDDING_Kahoot_Quiz.pdf`** : ไฟล์ PDF คำถาม 10 ข้อ + เฉลย + คำอธิบาย สำหรับใช้กับฟังก์ชัน AI Document Generator ใน Kahoot
-2. **`eyedon_wedding_cover.jpg`** : ภาพหน้าปกเกมส์สไตล์การ์ตูนน่ารักเรียบร้อย (16:9)
-3. **`EyeDonTheWEDDING_Kahoot_Template.xlsx`** : ไฟล์ Excel Template มาตรฐานของ Kahoot
-4. **`EyeDonTheWEDDING_Kahoot_Quiz.html`** : ไฟล์ HTML ต้นฉบับสำหรับดูตัวอย่างหรือพิมพ์ซ้ำ
+### 📂 รายการไฟล์และโฟลเดอร์:
+1. **`quiz-question-images/`** : โฟลเดอร์รวมรูปภาพประกอบคำถาม (16:9) ลายการ์ตูนอนิเมะสีน้ำหวานน่ารัก พร้อมการ์ดข้อความคำถามและลูกเล่นน่ารักๆ เหมาะสำหรับใส่อัปโหลดเป็น Media ของแต่ละข้อใน Kahoot
+   - `Q01_dating_year.jpg` : ข้อ 1 - บ่าวสาวเริ่มคบกันตั้งแต่ปีใด?
+   - `Q02_anniversary_date.jpg` : ข้อ 2 - วันครบรอบคบกันของบ่าวสาวตรงกับวันใด?
+   - `Q03_bride_favorite_drink.jpg` : ข้อ 3 - เครื่องดื่มสุดโปรดของเจ้าสาวคืออะไร?
+   - `Q04_groom_tidlor_career.jpg` : ข้อ 4 - เจ้าบ่าวทำงานด้านใดในเงินติดล้อ?
+   - `Q05_first_meet_place.jpg` : ข้อ 5 - เจ้าบ่าวเจ้าสาวเจอกันครั้งแรกที่ไหน?
+   - `Q06_first_date_place.jpg` : ข้อ 6 - เดทแรกของบ่าวสาวคือที่ไหน?
+   - `Q07_proposal_place.jpg` : ข้อ 7 - เจ้าบ่าวขอเจ้าสาวแต่งงานที่ไหน?
+   - `Q08_wedding_hashtag.jpg` : ข้อ 8 - แฮชแทกของงานนี้คืออะไร?
+   - `Q09_height_difference.jpg` : ข้อ 9 - เจ้าบ่าวและเจ้าสาวมีส่วนสูงต่างกันกี่เซนติเมตร?
+2. **`eyedon_wedding_cover.jpg`** : ภาพหน้าปกเกมส์สไตล์การ์ตูนน่ารักเรียบร้อย (16:9) สำหรับหน้าปก Kahoot
+3. **`EyeDonTheWEDDING_Kahoot_Quiz.pdf`** : ไฟล์ PDF คำถาม 10 ข้อ + เฉลย + คำอธิบาย สำหรับฟังก์ชัน AI Document Generator ใน Kahoot
+4. **`EyeDonTheWEDDING_Kahoot_Template.xlsx`** : ไฟล์ Excel Template มาตรฐานของ Kahoot
+5. **`EyeDonTheWEDDING_Kahoot_Quiz.html`** : ไฟล์ HTML ต้นฉบับสำหรับดูตัวอย่างหรือพิมพ์ซ้ำ
 
 ---
 
-### 🚀 วิธีการนำเข้า Kahoot:
-1. เข้าเว็บ Kahoot และกด **Create**
-2. เลือก **Question Generator** (หรือ Import PDF/Doc)
-3. อัปโหลดไฟล์ `EyeDonTheWEDDING_Kahoot_Quiz.pdf`
-4. ตั้งค่าหน้าปกโดยใช้รูป `eyedon_wedding_cover.jpg`
+### 🚀 วิธีการนำภาพไปใช้ใน Kahoot:
+1. ในหน้าแก้ไขคำถามแต่ละข้อของ Kahoot คลิกที่ช่อง **"Find and insert media"** ตรงกลางหน้าจอ
+2. เลือก **"Upload image"** แล้วเลือกไฟล์ภาพจากโฟลเดอร์ `quiz-question-images/` ตามหมายเลขข้อ
+3. เมื่อเปิดเล่นเกมบนจอเวที แขกในงานจะเห็นภาพวาดธีมงานแต่งหวานๆ พร้อมการ์ดข้อความน่ารักๆ ดึงดูดความสนใจและสร้างบรรยากาศสุดอบอุ่น!
