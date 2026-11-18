@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   LayoutDashboard,
   Tv,
@@ -21,6 +21,8 @@ import {
   isSupabaseConnected
 } from './services/db';
 
+const ACTIVE_PIN_STORAGE_KEY = 'bluw_active_host_pin_v1';
+
 export default function App() {
   const [viewMode, setViewMode] = useState('admin'); // 'admin' | 'stage' | 'guest' | 'client'
   const [games, setGames] = useState([]);
@@ -32,24 +34,48 @@ export default function App() {
   const [showSupabaseModal, setShowSupabaseModal] = useState(false);
   const [dbOnline, setDbOnline] = useState(isSupabaseConnected());
 
+  const activePinRef = useRef('');
+  const requestSeqRef = useRef(0);
+
+  useEffect(() => {
+    activePinRef.current = activeSession?.pin || localStorage.getItem(ACTIVE_PIN_STORAGE_KEY) || '';
+  }, [activeSession?.pin]);
+
   const loadData = useCallback(async () => {
+    const seq = ++requestSeqRef.current;
+
     const [gList, sList] = await Promise.all([
       fetchGames(),
       fetchSessionsHistory()
     ]);
+
+    if (seq !== requestSeqRef.current) return;
+
     setGames(gList);
     setSessions(sList);
     setDbOnline(isSupabaseConnected());
 
-    if (activeSession?.pin) {
-      const updatedSession = await getSessionByPin(activeSession.pin);
-      if (updatedSession) {
-        setActiveSession(updatedSession);
-        const pList = await fetchSessionPlayers(updatedSession.id);
-        setActivePlayers(pList);
+    // Determine which active session PIN to sync
+    let targetPin = activePinRef.current;
+    if (!targetPin && sList.length > 0) {
+      const openSession = sList.find((s) => s.status !== 'finished');
+      if (openSession) {
+        targetPin = openSession.pin;
+        activePinRef.current = targetPin;
       }
     }
-  }, [activeSession?.pin]);
+
+    if (targetPin) {
+      const updatedSession = await getSessionByPin(targetPin);
+      if (updatedSession && seq === requestSeqRef.current) {
+        setActiveSession(updatedSession);
+        const pList = await fetchSessionPlayers(updatedSession.id);
+        if (seq === requestSeqRef.current) {
+          setActivePlayers(pList);
+        }
+      }
+    }
+  }, []);
 
   // Check URL query params for QR Code Guest scan (?pin=XXXXXX) or Client Package link (?client=XXXX)
   useEffect(() => {
@@ -59,20 +85,30 @@ export default function App() {
 
     if (pinParam) {
       setGuestInitialPin(pinParam);
+      activePinRef.current = pinParam;
       setViewMode('guest');
     } else if (clientParam) {
       setClientInitialCode(clientParam);
       setViewMode('client');
     }
     loadData();
-  }, []);
+  }, [loadData]);
 
-  // Realtime subscription
+  // Realtime subscription + periodic sync for Stage view
   useEffect(() => {
     const unsub = subscribeToRealtime(() => {
       loadData();
     });
-    return unsub;
+    const pollInterval = setInterval(() => {
+      if (activePinRef.current) {
+        loadData();
+      }
+    }, 2500);
+
+    return () => {
+      unsub();
+      clearInterval(pollInterval);
+    };
   }, [loadData]);
 
   // Apply dynamic wedding/seminar theme attribute
@@ -83,6 +119,8 @@ export default function App() {
 
   const handleLaunchLiveSession = async (game) => {
     const newSession = await createLiveSession(game);
+    activePinRef.current = newSession.pin;
+    localStorage.setItem(ACTIVE_PIN_STORAGE_KEY, newSession.pin);
     setActiveSession(newSession);
     setActivePlayers([]);
     setGuestInitialPin(newSession.pin);
@@ -91,10 +129,24 @@ export default function App() {
   };
 
   const handleOpenStageView = async () => {
-    if (!activeSession && games.length > 0) {
-      await handleLaunchLiveSession(games[0]);
-    } else {
+    if (activeSession) {
       setViewMode('stage');
+      await loadData();
+      return;
+    }
+    const existingOpen = sessions.find((s) => s.status !== 'finished');
+    if (existingOpen) {
+      activePinRef.current = existingOpen.pin;
+      localStorage.setItem(ACTIVE_PIN_STORAGE_KEY, existingOpen.pin);
+      setActiveSession(existingOpen);
+      const pList = await fetchSessionPlayers(existingOpen.id);
+      setActivePlayers(pList);
+      setGuestInitialPin(existingOpen.pin);
+      setViewMode('stage');
+      return;
+    }
+    if (games.length > 0) {
+      await handleLaunchLiveSession(games[0]);
     }
   };
 
@@ -194,6 +246,7 @@ export default function App() {
           <GuestMobileView
             initialPin={guestInitialPin || activeSession?.pin || ''}
             activeSessions={sessions}
+            onPlayerJoined={loadData}
           />
         )}
 

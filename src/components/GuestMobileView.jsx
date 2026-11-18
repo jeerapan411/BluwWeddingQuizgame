@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Sparkles,
@@ -7,7 +7,9 @@ import {
   Trophy,
   Heart,
   Grid,
-  Send
+  Send,
+  Users,
+  UserPlus
 } from 'lucide-react';
 import { WEDDING_AVATARS } from '../data/defaultGames';
 import {
@@ -21,7 +23,11 @@ import {
 
 const CHOICE_SHAPES = ['▲', '◆', '●', '■'];
 
-export default function GuestMobileView({ initialPin = '', activeSessions = [] }) {
+export default function GuestMobileView({
+  initialPin = '',
+  activeSessions = [],
+  onPlayerJoined
+}) {
   const [pinInput, setPinInput] = useState(initialPin || '');
   const [nickname, setNickname] = useState('');
   const [tableName, setTableName] = useState('');
@@ -32,7 +38,16 @@ export default function GuestMobileView({ initialPin = '', activeSessions = [] }
 
   const [session, setSession] = useState(null);
   const [player, setPlayer] = useState(null);
+  const [roomPlayers, setRoomPlayers] = useState([]);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+
+  const playerIdRef = useRef('');
+  const sessionPinRef = useRef('');
+
+  useEffect(() => {
+    playerIdRef.current = player?.id || '';
+    sessionPinRef.current = session?.pin || '';
+  }, [player?.id, session?.pin]);
 
   useEffect(() => {
     if (initialPin) {
@@ -43,33 +58,47 @@ export default function GuestMobileView({ initialPin = '', activeSessions = [] }
     }
   }, [initialPin, activeSessions]);
 
-  // Sync live session & player state
-  const refreshLiveState = async () => {
-    if (!session?.pin || !player?.id) return;
-    const latestSession = await getSessionByPin(session.pin);
-    if (latestSession) {
-      if (
-        latestSession.current_question_index !== session.current_question_index ||
-        latestSession.status !== session.status
-      ) {
-        setQuestionStartTime(Date.now());
-      }
-      setSession(latestSession);
-      const players = await fetchSessionPlayers(latestSession.id);
-      const me = players.find((p) => p.id === player.id);
-      if (me) setPlayer(me);
-    }
-  };
-
+  // Sync live session & player state without race conditions
   useEffect(() => {
     if (!session?.pin || !player?.id) return;
-    const timer = setInterval(refreshLiveState, 1200);
-    window.addEventListener('bluw-realtime', refreshLiveState);
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener('bluw-realtime', refreshLiveState);
+    let isMounted = true;
+
+    const refreshLiveState = async () => {
+      const currentPin = sessionPinRef.current;
+      const currentPlayerId = playerIdRef.current;
+      if (!currentPin || !currentPlayerId) return;
+
+      const latestSession = await getSessionByPin(currentPin);
+      if (!isMounted || !latestSession) return;
+
+      setSession((prev) => {
+        if (
+          prev &&
+          (latestSession.current_question_index !== prev.current_question_index ||
+            latestSession.status !== prev.status)
+        ) {
+          setQuestionStartTime(Date.now());
+        }
+        return latestSession;
+      });
+
+      const playersList = await fetchSessionPlayers(latestSession.id);
+      if (!isMounted) return;
+      setRoomPlayers(playersList);
+
+      const me = playersList.find((p) => p.id === currentPlayerId);
+      if (me && playerIdRef.current === currentPlayerId) {
+        setPlayer(me);
+      }
     };
-  }, [session?.pin, session?.status, session?.current_question_index, player?.id]);
+
+    refreshLiveState();
+    const timer = setInterval(refreshLiveState, 2000);
+    return () => {
+      isMounted = false;
+      clearInterval(timer);
+    };
+  }, [session?.pin, player?.id]);
 
   // Fire confetti when guest achieves BINGO!
   useEffect(() => {
@@ -106,14 +135,29 @@ export default function GuestMobileView({ initialPin = '', activeSessions = [] }
         tableName,
         wishMessage
       });
+      playerIdRef.current = res.player.id;
+      sessionPinRef.current = res.session.pin;
       setSession(res.session);
       setPlayer(res.player);
+      const allInRoom = await fetchSessionPlayers(res.session.id);
+      setRoomPlayers(allInRoom);
       setQuestionStartTime(Date.now());
+      if (onPlayerJoined) onPlayerJoined();
     } catch (err) {
       setErrorMsg(err.message || 'ไม่สามารถเข้าร่วมห้องได้');
     } finally {
       setIsJoining(false);
     }
+  };
+
+  const handleResetToJoinAnotherGuest = () => {
+    playerIdRef.current = '';
+    setPlayer(null);
+    setNickname('');
+    setTableName('');
+    setWishMessage('');
+    const nextAvatarIdx = (WEDDING_AVATARS.indexOf(selectedAvatar) + 1) % WEDDING_AVATARS.length;
+    setSelectedAvatar(WEDDING_AVATARS[nextAvatarIdx]);
   };
 
   const game = session?.game_snapshot || {};
@@ -216,7 +260,7 @@ export default function GuestMobileView({ initialPin = '', activeSessions = [] }
                   letterSpacing: '0.12em',
                   textAlign: 'center'
                 }}
-                placeholder="เช่น 882941"
+                placeholder="เช่น 526640"
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value)}
                 required
@@ -357,7 +401,7 @@ export default function GuestMobileView({ initialPin = '', activeSessions = [] }
 
         {/* WAITING IN LOBBY */}
         {session.status === 'lobby' && (
-          <div className="guest-card" style={{ textAlign: 'center' }}>
+          <div className="guest-card" style={{ textAlign: 'center', marginBottom: '1rem' }}>
             <Sparkles size={34} color="var(--accent-primary)" style={{ marginBottom: '0.5rem' }} />
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem' }}>
               คุณเข้าสู่ห้องเกมเรียบร้อยแล้ว!
@@ -366,12 +410,82 @@ export default function GuestMobileView({ initialPin = '', activeSessions = [] }
               style={{
                 fontSize: '0.88rem',
                 color: 'var(--text-secondary)',
-                marginTop: '0.35rem'
+                marginTop: '0.35rem',
+                marginBottom: '1rem'
               }}
             >
-              มองดูชื่อ <strong>"{player.nickname}"</strong> ของคุณบนจอโปรเจกเตอร์หน้างานได้เลย
+              ชื่อ <strong>"{player.nickname}"</strong> ของคุณขึ้นบนจอโปรเจกเตอร์หน้างานแล้ว
               รอพิธีกรกดเริ่มเกมสักครู่...
             </p>
+
+            {/* Show All Guests Currently in the Room Side-by-Side (No Overlap) */}
+            <div
+              style={{
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '0.9rem',
+                textAlign: 'left',
+                marginBottom: '1rem'
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  marginBottom: '0.55rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem'
+                }}
+              >
+                <Users size={15} color="var(--accent-primary)" />
+                เพื่อนๆ ที่เข้าร่วมในห้องนี้แล้ว ({roomPlayers.length} คน):
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
+                {roomPlayers.map((rp) => {
+                  const isMe = rp.id === player.id;
+                  return (
+                    <span
+                      key={rp.id}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        padding: '0.3rem 0.7rem',
+                        borderRadius: '999px',
+                        fontSize: '0.82rem',
+                        fontWeight: isMe ? 700 : 500,
+                        background: isMe ? 'var(--accent-soft)' : 'var(--bg-surface)',
+                        color: isMe ? 'var(--accent-primary)' : 'var(--text-primary)',
+                        border: isMe
+                          ? '1.5px solid var(--accent-primary)'
+                          : '1px solid var(--border-subtle)'
+                      }}
+                    >
+                      <span>{rp.avatar || '🥂'}</span>
+                      <span>{rp.nickname}</span>
+                      {rp.table_name && (
+                        <span style={{ fontSize: '0.72rem', opacity: 0.75 }}>
+                          ({rp.table_name})
+                        </span>
+                      )}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ width: '100%', fontSize: '0.84rem' }}
+              onClick={handleResetToJoinAnotherGuest}
+            >
+              <UserPlus size={16} />
+              ทดสอบลงทะเบียนเพิ่มแขกคนถัดไป (คนที่ {roomPlayers.length + 1})
+            </button>
           </div>
         )}
 

@@ -120,9 +120,15 @@ export function isSupabaseConnected() {
 
 function emitLocalRealtime(event, payload) {
   if (broadcastChannel) {
-    broadcastChannel.postMessage({ event, payload, ts: Date.now() });
+    try {
+      broadcastChannel.postMessage({ event, payload, ts: Date.now() });
+    } catch {
+      // Ignore broadcast channel errors
+    }
   }
-  window.dispatchEvent(new CustomEvent('bluw-realtime', { detail: { event, payload } }));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('bluw-realtime', { detail: { event, payload } }));
+  }
 }
 
 // ============================================================================
@@ -166,7 +172,6 @@ export function generateBingoCard(game) {
       pool = shuffleArray(pool);
     }
   } else {
-    // Classic Number or Word Bingo
     const rawItems =
       Array.isArray(game.bingo_items) && game.bingo_items.length >= totalCells
         ? game.bingo_items
@@ -180,7 +185,6 @@ export function generateBingoCard(game) {
     }));
   }
 
-  // For 5x5 grid, center square (index 12) is FREE heart
   if (size === 5 && pool[12]) {
     pool[12] = {
       key: 'center_free',
@@ -200,14 +204,13 @@ export function getInitialMarkedCells(card) {
 export function countBingoLines(markedArray, gridSize) {
   const size = Number(gridSize) || 4;
   if (!Array.isArray(markedArray) || markedArray.length < size * size) {
-    return { lines: 0, winningIndices: [], bestProgress: 0 };
+    return { lines: 0, winningIndices: [], bestProgress: 0, nearBingo: false };
   }
 
   let lines = 0;
   const winningSet = new Set();
   let bestProgress = 0;
 
-  // Check Rows
   for (let r = 0; r < size; r++) {
     let count = 0;
     const rowIndices = [];
@@ -223,7 +226,6 @@ export function countBingoLines(markedArray, gridSize) {
     }
   }
 
-  // Check Columns
   for (let c = 0; c < size; c++) {
     let count = 0;
     const colIndices = [];
@@ -239,7 +241,6 @@ export function countBingoLines(markedArray, gridSize) {
     }
   }
 
-  // Check Main Diagonal (Top-Left to Bottom-Right)
   let diag1Count = 0;
   const diag1Indices = [];
   for (let i = 0; i < size; i++) {
@@ -253,7 +254,6 @@ export function countBingoLines(markedArray, gridSize) {
     diag1Indices.forEach((i) => winningSet.add(i));
   }
 
-  // Check Anti-Diagonal (Top-Right to Bottom-Left)
   let diag2Count = 0;
   const diag2Indices = [];
   for (let i = 0; i < size; i++) {
@@ -276,7 +276,7 @@ export function countBingoLines(markedArray, gridSize) {
 }
 
 // ============================================================================
-// LOCAL STORAGE HELPERS (Fallback + Instant Cache)
+// LOCAL STORAGE HELPERS (Silent Cache vs Event-Emitting Mutations)
 // ============================================================================
 
 function getLocalGames() {
@@ -292,9 +292,12 @@ function getLocalGames() {
   }
 }
 
-function setLocalGames(games) {
-  localStorage.setItem(STORAGE_KEYS.GAMES, JSON.stringify(games));
-  emitLocalRealtime('games_updated', {});
+function cacheLocalGames(games) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.GAMES, JSON.stringify(games));
+  } catch {
+    // Ignore storage quota errors
+  }
 }
 
 function getLocalSessions() {
@@ -310,9 +313,12 @@ function getLocalSessions() {
   }
 }
 
-function setLocalSessions(sessions) {
-  localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
-  emitLocalRealtime('sessions_updated', {});
+function cacheLocalSessions(sessions) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+  } catch {
+    // Ignore storage quota errors
+  }
 }
 
 function getLocalPlayers() {
@@ -324,9 +330,29 @@ function getLocalPlayers() {
   }
 }
 
-function setLocalPlayers(players) {
-  localStorage.setItem(STORAGE_KEYS.PLAYERS, JSON.stringify(players));
-  emitLocalRealtime('players_updated', {});
+function cacheLocalPlayers(players) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.PLAYERS, JSON.stringify(players));
+  } catch {
+    // Ignore storage quota errors
+  }
+}
+
+function mergePlayersList(localList, remoteList, sessionId) {
+  const byId = new Map();
+  localList
+    .filter((p) => !sessionId || p.session_id === sessionId)
+    .forEach((p) => byId.set(p.id, p));
+  remoteList
+    .filter((p) => !sessionId || p.session_id === sessionId)
+    .forEach((p) => byId.set(p.id, p));
+
+  return Array.from(byId.values()).sort((a, b) => {
+    const tA = new Date(a.joined_at || 0).getTime();
+    const tB = new Date(b.joined_at || 0).getTime();
+    if (tA !== tB) return tA - tB;
+    return String(a.id).localeCompare(String(b.id));
+  });
 }
 
 // ============================================================================
@@ -343,11 +369,11 @@ export async function fetchGames() {
         .select('*')
         .order('created_at', { ascending: false });
       if (!error && Array.isArray(data) && data.length > 0) {
-        setLocalGames(data);
+        // Silent cache update — DO NOT emit realtime event on read!
+        cacheLocalGames(data);
         return data;
       }
       if (!error && Array.isArray(data) && data.length === 0) {
-        // Seed initial games to Supabase automatically
         await sb.from('games').upsert(localGames);
         return localGames;
       }
@@ -382,7 +408,7 @@ export async function saveGame(gameData) {
   } else {
     games.unshift(record);
   }
-  setLocalGames(games);
+  cacheLocalGames(games);
 
   const sb = getSupabase();
   if (sb) {
@@ -392,12 +418,13 @@ export async function saveGame(gameData) {
       console.warn('Supabase saveGame fallback:', e);
     }
   }
+  emitLocalRealtime('games_updated', { gameId: id });
   return record;
 }
 
 export async function deleteGame(gameId) {
   const games = getLocalGames().filter((g) => g.id !== gameId);
-  setLocalGames(games);
+  cacheLocalGames(games);
   const sb = getSupabase();
   if (sb) {
     try {
@@ -406,6 +433,7 @@ export async function deleteGame(gameId) {
       console.warn('Supabase deleteGame error:', e);
     }
   }
+  emitLocalRealtime('games_updated', { gameId });
 }
 
 export async function findGameByClientCode(code) {
@@ -436,7 +464,7 @@ export async function createLiveSession(game) {
     couple_names: game.couple_names || '',
     event_type: game.event_type || 'wedding',
     theme: game.theme || 'rose_gold',
-    status: 'lobby', // 'lobby' | 'question' | 'reveal' | 'leaderboard' | 'bingo_live' | 'finished'
+    status: 'lobby',
     current_question_index: 0,
     question_started_at: null,
     drawn_bingo_items: [],
@@ -449,13 +477,12 @@ export async function createLiveSession(game) {
 
   const sessions = getLocalSessions();
   sessions.unshift(session);
-  setLocalSessions(sessions);
+  cacheLocalSessions(sessions);
 
-  // Increment game play_count
   const games = getLocalGames().map((g) =>
     g.id === game.id ? { ...g, play_count: (g.play_count || 0) + 1 } : g
   );
-  setLocalGames(games);
+  cacheLocalGames(games);
 
   const sb = getSupabase();
   if (sb) {
@@ -470,6 +497,7 @@ export async function createLiveSession(game) {
     }
   }
 
+  emitLocalRealtime('session_created', { sessionId, pin });
   return session;
 }
 
@@ -483,7 +511,8 @@ export async function fetchSessionsHistory() {
         .select('*')
         .order('started_at', { ascending: false });
       if (!error && Array.isArray(data) && data.length > 0) {
-        setLocalSessions(data);
+        // Silent cache update — DO NOT emit realtime event on read!
+        cacheLocalSessions(data);
         return data;
       }
     } catch (e) {
@@ -529,7 +558,7 @@ export async function updateSessionState(sessionId, patch) {
     }
     return s;
   });
-  setLocalSessions(next);
+  cacheLocalSessions(next);
 
   const sb = getSupabase();
   if (sb) {
@@ -540,7 +569,7 @@ export async function updateSessionState(sessionId, patch) {
     }
   }
 
-  emitLocalRealtime('session_state_changed', { sessionId, session: updated });
+  emitLocalRealtime('session_state_changed', { sessionId, patch });
   return updated;
 }
 
@@ -550,6 +579,8 @@ export async function updateSessionState(sessionId, patch) {
 
 export async function fetchSessionPlayers(sessionId) {
   if (!sessionId) return [];
+  const localForSession = getLocalPlayers().filter((p) => p.session_id === sessionId);
+
   const sb = getSupabase();
   if (sb) {
     try {
@@ -559,13 +590,26 @@ export async function fetchSessionPlayers(sessionId) {
         .eq('session_id', sessionId)
         .order('joined_at', { ascending: true });
       if (!error && Array.isArray(data)) {
-        return data;
+        const remoteIds = new Set(data.map((p) => p.id));
+        const missingOnRemote = localForSession.filter((p) => !remoteIds.has(p.id));
+        if (missingOnRemote.length > 0) {
+          try {
+            await sb.from('session_players').upsert(missingOnRemote);
+          } catch (syncErr) {
+            console.warn('Auto-sync local players to Supabase warning:', syncErr);
+          }
+        }
+
+        const mergedSessionPlayers = mergePlayersList(localForSession, data, sessionId);
+        const otherSessionsPlayers = getLocalPlayers().filter((p) => p.session_id !== sessionId);
+        cacheLocalPlayers([...otherSessionsPlayers, ...mergedSessionPlayers]);
+        return mergedSessionPlayers;
       }
     } catch (e) {
       console.warn('Supabase fetchSessionPlayers fallback:', e);
     }
   }
-  return getLocalPlayers().filter((p) => p.session_id === sessionId);
+  return mergePlayersList(localForSession, [], sessionId);
 }
 
 export async function joinSessionAsGuest({ pin, nickname, avatar, tableName, wishMessage }) {
@@ -587,8 +631,13 @@ export async function joinSessionAsGuest({ pin, nickname, avatar, tableName, wis
   const bingoCard = game.game_mode === 'bingo' ? generateBingoCard(game) : [];
   const bingoMarked = game.game_mode === 'bingo' ? getInitialMarkedCells(bingoCard) : [];
 
+  const uniqueSuffix =
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID().slice(0, 8)
+      : `${Math.random().toString(36).substring(2, 8)}${Math.floor(Math.random() * 1000)}`;
+
   const player = {
-    id: `guest-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    id: `guest-${Date.now()}-${uniqueSuffix}`,
     session_id: session.id,
     pin: session.pin,
     nickname: nickname.trim(),
@@ -607,14 +656,7 @@ export async function joinSessionAsGuest({ pin, nickname, avatar, tableName, wis
     joined_at: new Date().toISOString()
   };
 
-  const allLocal = getLocalPlayers();
-  allLocal.push(player);
-  setLocalPlayers(allLocal);
-
-  await updateSessionState(session.id, {
-    player_count: currentPlayers.length + 1
-  });
-
+  // 1. Insert into Supabase FIRST so remote reads immediately include this guest
   const sb = getSupabase();
   if (sb) {
     try {
@@ -624,8 +666,20 @@ export async function joinSessionAsGuest({ pin, nickname, avatar, tableName, wis
     }
   }
 
+  // 2. Save to local cache without duplicate IDs
+  const allLocal = getLocalPlayers().filter((p) => p.id !== player.id);
+  allLocal.push(player);
+  cacheLocalPlayers(allLocal);
+
+  // 3. Update total player_count on the session
+  const updatedCount = currentPlayers.length + 1;
+  await updateSessionState(session.id, {
+    player_count: updatedCount
+  });
+
+  // 4. Emit local & cross-tab realtime event AFTER DB writes finish
   emitLocalRealtime('player_joined', { sessionId: session.id, player });
-  return { session, player };
+  return { session: { ...session, player_count: updatedCount }, player };
 }
 
 export async function submitQuizAnswer({ session, playerId, questionIndex, optionIndex, elapsedSeconds }) {
@@ -637,15 +691,14 @@ export async function submitQuizAnswer({ session, playerId, questionIndex, optio
   const timeLimit = Number(question.timeLimit) || 20;
   const basePoints = Number(question.points) || 1000;
 
-  // Speed bonus calculation like Kahoot (up to 100% of basePoints)
   const clampedElapsed = Math.max(0, Math.min(timeLimit, Number(elapsedSeconds) || 2));
   const speedRatio = 1 - clampedElapsed / timeLimit / 2;
   const earnedPoints = isCorrect ? Math.round(basePoints * speedRatio) : 0;
 
-  const players = getLocalPlayers();
+  const players = await fetchSessionPlayers(session.id);
   let updatedPlayer = null;
 
-  const nextPlayers = players.map((p) => {
+  const nextSessionPlayers = players.map((p) => {
     if (p.id !== playerId) return p;
     if (p.answers && p.answers[questionIndex] !== undefined) {
       updatedPlayer = p;
@@ -667,17 +720,14 @@ export async function submitQuizAnswer({ session, playerId, questionIndex, optio
     let isBingoWinner = p.is_bingo_winner || false;
     let bingoWonAt = p.bingo_won_at || null;
 
-    // If this is Quiz Bingo mode and guest answered correctly, mark their Bingo board!
     if (session.game_mode === 'bingo' && session.bingo_submode === 'quiz_grid' && isCorrect) {
       const card = Array.isArray(p.bingo_card) ? p.bingo_card : [];
       if (session.bingo_fill_mode === 'sequential') {
-        // Mark the next unmarked cell sequentially ("ให้แขกตอบถูกจะเรียงไปเรื่อยๆ")
         const nextEmptyIdx = nextMarked.findIndex((m) => !m);
         if (nextEmptyIdx >= 0) {
           nextMarked[nextEmptyIdx] = true;
         }
       } else {
-        // Match the cell belonging to this questionIndex on their shuffled card
         const matchIdx = card.findIndex((c) => c.questionIndex === questionIndex);
         if (matchIdx >= 0) {
           nextMarked[matchIdx] = true;
@@ -697,7 +747,7 @@ export async function submitQuizAnswer({ session, playerId, questionIndex, optio
 
     updatedPlayer = {
       ...p,
-      score: (p.score || 0) + earnedPoints + (nextLines * 300),
+      score: (p.score || 0) + earnedPoints + nextLines * 300,
       correct_count: (p.correct_count || 0) + (isCorrect ? 1 : 0),
       streak: isCorrect ? (p.streak || 0) + 1 : 0,
       bingo_marked: nextMarked,
@@ -709,7 +759,8 @@ export async function submitQuizAnswer({ session, playerId, questionIndex, optio
     return updatedPlayer;
   });
 
-  setLocalPlayers(nextPlayers);
+  const otherPlayers = getLocalPlayers().filter((p) => p.session_id !== session.id);
+  cacheLocalPlayers([...otherPlayers, ...nextSessionPlayers]);
 
   const sb = getSupabase();
   if (sb && updatedPlayer) {
@@ -737,17 +788,16 @@ export async function submitQuizAnswer({ session, playerId, questionIndex, optio
 }
 
 export async function toggleClassicBingoCell({ session, playerId, cellIndex }) {
-  const players = getLocalPlayers();
+  const players = await fetchSessionPlayers(session.id);
   let updatedPlayer = null;
   const drawnSet = new Set((session.drawn_bingo_items || []).map(String));
 
-  const nextPlayers = players.map((p) => {
+  const nextSessionPlayers = players.map((p) => {
     if (p.id !== playerId) return p;
     const card = Array.isArray(p.bingo_card) ? p.bingo_card : [];
     const cell = card[cellIndex];
     if (!cell) return p;
 
-    // Only allow marking if the number/word has been drawn by Host (or is FREE cell)
     if (!cell.isFree && !drawnSet.has(String(cell.label))) {
       updatedPlayer = p;
       return p;
@@ -772,7 +822,8 @@ export async function toggleClassicBingoCell({ session, playerId, cellIndex }) {
     return updatedPlayer;
   });
 
-  setLocalPlayers(nextPlayers);
+  const otherPlayers = getLocalPlayers().filter((p) => p.session_id !== session.id);
+  cacheLocalPlayers([...otherPlayers, ...nextSessionPlayers]);
 
   const sb = getSupabase();
   if (sb && updatedPlayer) {
@@ -827,6 +878,7 @@ export async function simulateGuestsBatch(session, count = 25) {
   const game = session.game_snapshot || {};
   const newPlayers = [];
   const baseIdx = currentPlayers.length;
+  const baseTime = Date.now();
 
   for (let i = 0; i < toCreate; i++) {
     const num = baseIdx + i + 1;
@@ -853,16 +905,9 @@ export async function simulateGuestsBatch(session, count = 25) {
       is_bingo_winner: false,
       bingo_won_at: null,
       answers: {},
-      joined_at: new Date().toISOString()
+      joined_at: new Date(baseTime + i).toISOString()
     });
   }
-
-  const allLocal = [...getLocalPlayers(), ...newPlayers];
-  setLocalPlayers(allLocal);
-
-  await updateSessionState(session.id, {
-    player_count: currentPlayers.length + newPlayers.length
-  });
 
   const sb = getSupabase();
   if (sb) {
@@ -873,22 +918,29 @@ export async function simulateGuestsBatch(session, count = 25) {
     }
   }
 
+  const allLocal = [...getLocalPlayers(), ...newPlayers];
+  cacheLocalPlayers(allLocal);
+
+  await updateSessionState(session.id, {
+    player_count: currentPlayers.length + newPlayers.length
+  });
+
   emitLocalRealtime('players_updated', { sessionId: session.id });
   return [...currentPlayers, ...newPlayers];
 }
 
 export async function simulateCrowdAnswersForQuestion(session, questionIndex) {
-  const players = getLocalPlayers();
+  const players = await fetchSessionPlayers(session.id);
   const game = session.game_snapshot || {};
   const question = (game.questions || [])[questionIndex];
   if (!question) return;
 
-  const nextPlayers = players.map((p) => {
+  const updatedBots = [];
+  const nextSessionPlayers = players.map((p) => {
     if (p.session_id !== session.id) return p;
-    if (!p.id.startsWith('sim-')) return p; // Only auto-answer for simulated bots
+    if (!p.id.startsWith('sim-')) return p;
     if (p.answers && p.answers[questionIndex] !== undefined) return p;
 
-    // 68% chance bot picks the right answer
     const willBeCorrect = Math.random() < 0.68;
     const optionIndex = willBeCorrect
       ? Number(question.correctIndex)
@@ -920,7 +972,7 @@ export async function simulateCrowdAnswersForQuestion(session, questionIndex) {
       }
     }
 
-    return {
+    const updated = {
       ...p,
       score: (p.score || 0) + earnedPoints + nextLines * 300,
       correct_count: (p.correct_count || 0) + (isCorrect ? 1 : 0),
@@ -939,15 +991,30 @@ export async function simulateCrowdAnswersForQuestion(session, questionIndex) {
         }
       }
     };
+    updatedBots.push(updated);
+    return updated;
   });
 
-  setLocalPlayers(nextPlayers);
+  const otherPlayers = getLocalPlayers().filter((p) => p.session_id !== session.id);
+  cacheLocalPlayers([...otherPlayers, ...nextSessionPlayers]);
+
+  const sb = getSupabase();
+  if (sb && updatedBots.length > 0) {
+    try {
+      await sb.from('session_players').upsert(updatedBots);
+    } catch (e) {
+      console.warn('Supabase simulateCrowdAnswersForQuestion fallback:', e);
+    }
+  }
+
   emitLocalRealtime('answer_submitted', { sessionId: session.id, questionIndex });
 }
 
 export async function simulateCrowdMarkDrawnNumber(session, drawnLabel) {
-  const players = getLocalPlayers();
-  const nextPlayers = players.map((p) => {
+  const players = await fetchSessionPlayers(session.id);
+  const updatedBots = [];
+
+  const nextSessionPlayers = players.map((p) => {
     if (p.session_id !== session.id) return p;
     if (!p.id.startsWith('sim-')) return p;
 
@@ -962,7 +1029,7 @@ export async function simulateCrowdMarkDrawnNumber(session, drawnLabel) {
     const nextLines = lineCheck.lines;
     const wonNow = nextLines > 0 && !p.is_bingo_winner;
 
-    return {
+    const updated = {
       ...p,
       bingo_marked: nextMarked,
       bingo_lines: nextLines,
@@ -971,18 +1038,39 @@ export async function simulateCrowdMarkDrawnNumber(session, drawnLabel) {
       is_bingo_winner: p.is_bingo_winner || nextLines > 0,
       bingo_won_at: wonNow ? new Date().toISOString() : p.bingo_won_at
     };
+    updatedBots.push(updated);
+    return updated;
   });
 
-  setLocalPlayers(nextPlayers);
+  const otherPlayers = getLocalPlayers().filter((p) => p.session_id !== session.id);
+  cacheLocalPlayers([...otherPlayers, ...nextSessionPlayers]);
+
+  const sb = getSupabase();
+  if (sb && updatedBots.length > 0) {
+    try {
+      await sb.from('session_players').upsert(updatedBots);
+    } catch (e) {
+      console.warn('Supabase simulateCrowdMarkDrawnNumber fallback:', e);
+    }
+  }
+
   emitLocalRealtime('bingo_card_updated', { sessionId: session.id });
 }
 
 export function subscribeToRealtime(onEvent) {
+  let debounceTimer = null;
+  const triggerDebounced = (detail) => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      onEvent(detail);
+    }, 180);
+  };
+
   const handler = (e) => {
-    if (e.detail) onEvent(e.detail);
+    if (e.detail) triggerDebounced(e.detail);
   };
   const bcHandler = (msg) => {
-    if (msg.data) onEvent(msg.data);
+    if (msg.data) triggerDebounced(msg.data);
   };
 
   window.addEventListener('bluw-realtime', handler);
@@ -996,15 +1084,16 @@ export function subscribeToRealtime(onEvent) {
     sbChannel = sb
       .channel('public-game-events')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'game_sessions' }, (payload) => {
-        onEvent({ event: 'supabase_session_change', payload });
+        triggerDebounced({ event: 'supabase_session_change', payload });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'session_players' }, (payload) => {
-        onEvent({ event: 'supabase_player_change', payload });
+        triggerDebounced({ event: 'supabase_player_change', payload });
       })
       .subscribe();
   }
 
   return () => {
+    if (debounceTimer) clearTimeout(debounceTimer);
     window.removeEventListener('bluw-realtime', handler);
     if (broadcastChannel) {
       broadcastChannel.removeEventListener('message', bcHandler);
