@@ -22,7 +22,8 @@ import {
 } from 'lucide-react';
 import { THEME_OPTIONS } from '../data/defaultGames';
 import { saveGame, deleteGame, fetchSessionPlayers } from '../services/db';
-import { RECOMMENDED_YOUTUBE_PRESETS } from '../utils/musicEngine';
+import { getDefaultMusicConfig } from '../utils/musicEngine';
+import MusicPresetManager from './MusicPresetManager';
 
 const EMPTY_QUESTION = () => ({
   id: `q_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`,
@@ -110,6 +111,8 @@ export default function AdminDashboard({
             }
           ];
 
+    const defaultMusic = getDefaultMusicConfig();
+
     setEditingGame({
       id: '',
       title:
@@ -133,6 +136,7 @@ export default function AdminDashboard({
       client_code: `WED-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
       package_name: 'แพ็กเกจนายพิธี + เกมงานแต่ง (VIP)',
       max_players: 200,
+      ...defaultMusic,
       questions: presetSubmode === 'number_classic' ? [] : defaultQuestions,
       bingo_items:
         presetSubmode === 'number_classic'
@@ -759,137 +763,19 @@ export default function AdminDashboard({
             </div>
           </div>
 
-          {/* 3-Phase Wedding Theme Music Configuration */}
-          <div
-            style={{
-              background: 'var(--bg-primary)',
-              padding: '1.35rem',
-              borderRadius: 'var(--radius-lg)',
-              marginBottom: '1.5rem',
-              border: '1px solid var(--border-subtle)'
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '0.75rem',
-                marginBottom: '0.85rem'
-              }}
-            >
-              <div>
-                <h3
-                  style={{
-                    fontSize: '1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.45rem'
-                  }}
-                >
-                  <Music size={18} color="var(--accent-primary)" />
-                  ตั้งค่าเพลงบรรเลง 3 ช่วงเวลา (รอคนเข้า • ระหว่างเล่นเกม • ประกาศผู้ชนะ)
-                </h3>
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                  วางลิงก์ YouTube แยก 3 ช่วงได้ตามต้องการ หากเว้นว่างหรือกดปุ่มใช้เพลงระบบ จะเล่นเพลงกล่องดนตรีงานแต่งหวานๆ ของระบบให้อัตโนมัติ
-                </p>
-              </div>
-
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className={`btn ${
-                    (editingGame.music_mode || 'builtin') === 'builtin'
-                      ? 'btn-primary'
-                      : 'btn-secondary'
-                  }`}
-                  style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
-                  onClick={() =>
-                    setEditingGame({
-                      ...editingGame,
-                      music_mode: 'builtin'
-                    })
-                  }
-                >
-                  <Sparkles size={14} />
-                  ใช้เพลงหวานๆ ของระบบ (แนะนำ)
-                </button>
-                {RECOMMENDED_YOUTUBE_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
-                    onClick={() =>
-                      setEditingGame({
-                        ...editingGame,
-                        music_mode: 'youtube',
-                        music_lobby_yt: preset.lobbyUrl,
-                        music_play_yt: preset.playUrl,
-                        music_winner_yt: preset.winnerUrl
-                      })
-                    }
-                  >
-                    เติมลิงก์ YouTube: {preset.name.split(' (')[0]}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="form-grid" style={{ marginBottom: 0 }}>
-              <div className="form-group">
-                <label>1. ลิงก์ YouTube ช่วงรอแขกสแกน QR เข้าเล่น (Waiting Lobby)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="วางลิงก์ YouTube (หรือเว้นว่างเพื่อใช้เพลงหวานๆ ของระบบ)"
-                  value={editingGame.music_lobby_yt || ''}
-                  onChange={(e) =>
-                    setEditingGame({
-                      ...editingGame,
-                      music_mode: e.target.value.trim() ? 'youtube' : editingGame.music_mode,
-                      music_lobby_yt: e.target.value
-                    })
-                  }
-                />
-              </div>
-
-              <div className="form-group">
-                <label>2. ลิงก์ YouTube ช่วงระหว่างเล่นเกม / ตอบคำถาม / บิงโก (Gameplay)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="วางลิงก์ YouTube (หรือเว้นว่างเพื่อใช้เพลงจังหวะสนุกของระบบ)"
-                  value={editingGame.music_play_yt || ''}
-                  onChange={(e) =>
-                    setEditingGame({
-                      ...editingGame,
-                      music_mode: e.target.value.trim() ? 'youtube' : editingGame.music_mode,
-                      music_play_yt: e.target.value
-                    })
-                  }
-                />
-              </div>
-
-              <div className="form-group">
-                <label>3. ลิงก์ YouTube ช่วงประกาศรางวัลผู้ชนะ (Winner Finale)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="วางลิงก์ YouTube (หรือเว้นว่างเพื่อใช้เพลงฉลองผู้ชนะของระบบ)"
-                  value={editingGame.music_winner_yt || ''}
-                  onChange={(e) =>
-                    setEditingGame({
-                      ...editingGame,
-                      music_mode: e.target.value.trim() ? 'youtube' : editingGame.music_mode,
-                      music_winner_yt: e.target.value
-                    })
-                  }
-                />
-              </div>
-            </div>
-          </div>
+          {/* 3-Phase Wedding Theme Music & Preset Manager with Audio Preview */}
+          <MusicPresetManager
+            musicMode={editingGame.music_mode || 'builtin'}
+            lobbyYt={editingGame.music_lobby_yt || ''}
+            playYt={editingGame.music_play_yt || ''}
+            winnerYt={editingGame.music_winner_yt || ''}
+            onChangeMusic={(patch) =>
+              setEditingGame({
+                ...editingGame,
+                ...patch
+              })
+            }
+          />
 
           {/* Bingo Specific Options */}
           {editingGame.game_mode === 'bingo' && (

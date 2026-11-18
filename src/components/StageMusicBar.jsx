@@ -5,7 +5,6 @@ import {
   VolumeX,
   Youtube,
   Sparkles,
-  Settings,
   X,
   CheckCircle2
 } from 'lucide-react';
@@ -13,9 +12,9 @@ import {
   builtInSynth,
   extractYouTubeId,
   getPhaseFromSessionStatus,
-  RECOMMENDED_YOUTUBE_PRESETS,
   MUSIC_SOURCES_GUIDE
 } from '../utils/musicEngine';
+import MusicPresetManager from './MusicPresetManager';
 
 const PHASE_LABELS = {
   lobby: 'ช่วงที่ 1: รอแขกสแกน QR เข้างาน (Lobby Music)',
@@ -29,14 +28,26 @@ export default function StageMusicBar({ session, onUpdateSessionMusic }) {
 
   const [isMuted, setIsMuted] = useState(true);
   const [musicSourceMode, setMusicSourceMode] = useState(
-    game.music_mode || 'builtin' // 'builtin' | 'youtube'
+    game.music_mode || 'builtin'
   );
   const [lobbyYt, setLobbyYt] = useState(game.music_lobby_yt || '');
   const [playYt, setPlayYt] = useState(game.music_play_yt || '');
   const [winnerYt, setWinnerYt] = useState(game.music_winner_yt || '');
   const [showMusicModal, setShowMusicModal] = useState(false);
 
-  // Determine active YouTube video ID for the current phase
+  // Sync local state if session snapshot updates
+  useEffect(() => {
+    setMusicSourceMode(game.music_mode || 'builtin');
+    setLobbyYt(game.music_lobby_yt || '');
+    setPlayYt(game.music_play_yt || '');
+    setWinnerYt(game.music_winner_yt || '');
+  }, [
+    game.music_mode,
+    game.music_lobby_yt,
+    game.music_play_yt,
+    game.music_winner_yt
+  ]);
+
   const currentYtUrl =
     currentPhase === 'winner'
       ? winnerYt
@@ -48,12 +59,11 @@ export default function StageMusicBar({ session, onUpdateSessionMusic }) {
 
   // Sync built-in synthesizer whenever phase, mute, or source mode changes
   useEffect(() => {
-    if (isMuted) {
+    if (isMuted || showMusicModal) {
       builtInSynth.stop();
       return;
     }
 
-    // If mode is builtin OR no valid YouTube link was provided for this phase, play built-in wedding music!
     if (musicSourceMode === 'builtin' || !activeYoutubeId) {
       builtInSynth.start(currentPhase);
     } else {
@@ -63,7 +73,7 @@ export default function StageMusicBar({ session, onUpdateSessionMusic }) {
     return () => {
       builtInSynth.stop();
     };
-  }, [isMuted, musicSourceMode, currentPhase, activeYoutubeId]);
+  }, [isMuted, showMusicModal, musicSourceMode, currentPhase, activeYoutubeId]);
 
   const handleTogglePlayMusic = () => {
     setIsMuted((prev) => !prev);
@@ -72,17 +82,17 @@ export default function StageMusicBar({ session, onUpdateSessionMusic }) {
   const handleUseBuiltInImmediately = () => {
     setMusicSourceMode('builtin');
     setIsMuted(false);
+    if (onUpdateSessionMusic) {
+      onUpdateSessionMusic({
+        music_mode: 'builtin',
+        music_lobby_yt: lobbyYt,
+        music_play_yt: playYt,
+        music_winner_yt: winnerYt
+      });
+    }
   };
 
-  const handleApplyPreset = (preset) => {
-    setLobbyYt(preset.lobbyUrl);
-    setPlayYt(preset.playUrl);
-    setWinnerYt(preset.winnerUrl);
-    setMusicSourceMode('youtube');
-  };
-
-  const handleSaveMusicSettings = (e) => {
-    e.preventDefault();
+  const handleSaveMusicSettings = () => {
     if (onUpdateSessionMusic) {
       onUpdateSessionMusic({
         music_mode: musicSourceMode,
@@ -173,13 +183,13 @@ export default function StageMusicBar({ session, onUpdateSessionMusic }) {
             onClick={() => setShowMusicModal(true)}
           >
             <Youtube size={15} color="#ff6b6b" />
-            ตั้งค่าลิงก์เพลง YouTube 3 ช่วง
+            เลือก Preset เพลง / ตั้งค่าลิงก์ YouTube 3 ช่วง
           </button>
         </div>
       </div>
 
       {/* Embedded YouTube Audio/Video Bar when active & unmuted */}
-      {!isMuted && activeYoutubeId && (
+      {!isMuted && !showMusicModal && activeYoutubeId && (
         <div
           style={{
             marginTop: '0.6rem',
@@ -208,19 +218,19 @@ export default function StageMusicBar({ session, onUpdateSessionMusic }) {
         </div>
       )}
 
-      {/* Modal: Configure 3-Phase YouTube Links or System Wedding Music */}
+      {/* Modal: Configure 3-Phase YouTube Links & Music Presets with Preview */}
       {showMusicModal && (
         <div className="modal-backdrop" onClick={() => setShowMusicModal(false)}>
           <div
             className="modal-content"
-            style={{ color: 'var(--text-primary)' }}
+            style={{ maxWidth: '860px', color: 'var(--text-primary)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <Music size={22} color="var(--accent-primary)" />
                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem' }}>
-                  ตั้งค่าเพลงประกอบงานแต่ง 3 ช่วง (YouTube & เพลงระบบ)
+                  จัดการ Preset เพลงงานแต่ง & ลิงก์ YouTube 3 ช่วง (พร้อมพรีวิวฟังเสียง)
                 </h3>
               </div>
               <button
@@ -232,159 +242,55 @@ export default function StageMusicBar({ session, onUpdateSessionMusic }) {
               </button>
             </div>
 
-            <form onSubmit={handleSaveMusicSettings}>
-              <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className={`btn ${
-                    musicSourceMode === 'builtin' ? 'btn-primary' : 'btn-secondary'
-                  }`}
-                  onClick={() => setMusicSourceMode('builtin')}
-                >
-                  <Sparkles size={16} />
-                  ใช้เพลงหวานๆ ของระบบ (ไม่ต้องใส่ลิงก์)
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${
-                    musicSourceMode === 'youtube' ? 'btn-primary' : 'btn-secondary'
-                  }`}
-                  onClick={() => setMusicSourceMode('youtube')}
-                >
-                  <Youtube size={16} />
-                  ใช้เพลงจากลิงก์ YouTube 3 ช่วง
-                </button>
-              </div>
+            <MusicPresetManager
+              musicMode={musicSourceMode}
+              lobbyYt={lobbyYt}
+              playYt={playYt}
+              winnerYt={winnerYt}
+              onChangeMusic={(patch) => {
+                if (patch.music_mode !== undefined) setMusicSourceMode(patch.music_mode);
+                if (patch.music_lobby_yt !== undefined) setLobbyYt(patch.music_lobby_yt);
+                if (patch.music_play_yt !== undefined) setPlayYt(patch.music_play_yt);
+                if (patch.music_winner_yt !== undefined) setWinnerYt(patch.music_winner_yt);
+              }}
+            />
 
-              <div
-                style={{
-                  background: 'var(--bg-primary)',
-                  padding: '1.15rem',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '1px solid var(--border-subtle)',
-                  marginBottom: '1.25rem'
-                }}
+            <div
+              style={{
+                background: 'var(--accent-gold-soft)',
+                padding: '0.9rem 1.1rem',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.8rem',
+                marginBottom: '1.25rem'
+              }}
+            >
+              <strong>💡 แหล่งหาเพลงงานแต่งเพราะๆ สำหรับนำลิงก์มาใส่:</strong>
+              <ul style={{ paddingLeft: '1.2rem', marginTop: '0.35rem' }}>
+                {MUSIC_SOURCES_GUIDE.map((g, i) => (
+                  <li key={i} style={{ marginBottom: '0.2rem' }}>
+                    <strong>{g.title}:</strong> {g.detail}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65rem' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowMusicModal(false)}
               >
-                <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.65rem' }}>
-                  ใส่ลิงก์ YouTube แยกตาม 3 ช่วงเวลา (หากช่องไหนเว้นว่าง ระบบจะเล่นเพลงหวานๆ ของระบบแทนอัตโนมัติ)
-                </div>
-
-                <div className="form-group" style={{ marginBottom: '0.85rem' }}>
-                  <label>1. ลิงก์ YouTube ช่วงรอแขกสแกน QR เข้าเล่น (Waiting Lobby)</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="เช่น https://www.youtube.com/watch?v=..."
-                    value={lobbyYt}
-                    onChange={(e) => {
-                      setLobbyYt(e.target.value);
-                      if (e.target.value.trim()) setMusicSourceMode('youtube');
-                    }}
-                  />
-                </div>
-
-                <div className="form-group" style={{ marginBottom: '0.85rem' }}>
-                  <label>2. ลิงก์ YouTube ช่วงระหว่างเล่นเกม / ตอบคำถาม / หมุนบิงโก (Gameplay)</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="เช่น https://www.youtube.com/watch?v=..."
-                    value={playYt}
-                    onChange={(e) => {
-                      setPlayYt(e.target.value);
-                      if (e.target.value.trim()) setMusicSourceMode('youtube');
-                    }}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>3. ลิงก์ YouTube ช่วงประกาศรางวัลผู้ชนะ (Winner Finale Podium)</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="เช่น https://www.youtube.com/watch?v=..."
-                    value={winnerYt}
-                    onChange={(e) => {
-                      setWinnerYt(e.target.value);
-                      if (e.target.value.trim()) setMusicSourceMode('youtube');
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Preset YouTube Collections */}
-              <div style={{ marginBottom: '1.25rem' }}>
-                <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: '0.5rem' }}>
-                  หรือกดเลือกเซ็ตลิงก์ YouTube แนะนำสำหรับงานแต่ง:
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {RECOMMENDED_YOUTUBE_PRESETS.map((preset) => (
-                    <div
-                      key={preset.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '0.75rem',
-                        padding: '0.65rem 0.95rem',
-                        background: 'var(--bg-secondary)',
-                        borderRadius: 'var(--radius-md)',
-                        fontSize: '0.84rem'
-                      }}
-                    >
-                      <div>
-                        <strong>{preset.name}</strong>
-                        <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
-                          {preset.description}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
-                        onClick={() => handleApplyPreset(preset)}
-                      >
-                        ใช้เซ็ตนี้
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Guide on where to find great wedding music */}
-              <div
-                style={{
-                  background: 'var(--accent-gold-soft)',
-                  padding: '0.9rem 1.1rem',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: '0.8rem',
-                  marginBottom: '1.25rem'
-                }}
+                ปิดหน้าต่าง
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSaveMusicSettings}
               >
-                <strong>💡 แหล่งหาเพลงงานแต่งเพราะๆ สำหรับนำลิงก์มาใส่:</strong>
-                <ul style={{ paddingLeft: '1.2rem', marginTop: '0.35rem' }}>
-                  {MUSIC_SOURCES_GUIDE.map((g, i) => (
-                    <li key={i} style={{ marginBottom: '0.2rem' }}>
-                      <strong>{g.title}:</strong> {g.detail}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65rem' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowMusicModal(false)}
-                >
-                  ปิดหน้าต่าง
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  <CheckCircle2 size={17} />
-                  บันทึกและเปิดใช้งานเพลง
-                </button>
-              </div>
-            </form>
+                <CheckCircle2 size={17} />
+                บันทึกและนำไปใช้กับห้องเกมนี้
+              </button>
+            </div>
           </div>
         </div>
       )}

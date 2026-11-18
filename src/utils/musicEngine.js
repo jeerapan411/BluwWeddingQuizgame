@@ -1,29 +1,51 @@
 // ============================================================================
-// BLUW WEDDING 3-PHASE MUSIC ENGINE (Web Audio Romantic Synthesizer + YouTube)
+// BLUW WEDDING 3-PHASE MUSIC ENGINE & PRESET MANAGER
 // Supports:
-//   Phase 1 ('lobby')    : Sweet Romantic Wedding Music Box & Warm Piano
-//   Phase 2 ('gameplay') : Cute Upbeat Wedding Marimba & Pop Groove
-//   Phase 3 ('winner')   : Grand Romantic Celebration Fanfare & Chimes
+//   - Built-in Romantic Wedding Music Box & Upbeat Synthesizer
+//   - 3-Phase YouTube Links (Lobby / Gameplay / Winner Finale)
+//   - Custom Music Presets (Save, Preview 3 Phases, Set Default, Delete)
 // ============================================================================
 
-export const RECOMMENDED_YOUTUBE_PRESETS = [
+const PRESETS_STORAGE_KEY = 'bluw_wedding_music_presets_v1';
+const DEFAULT_PRESET_ID_KEY = 'bluw_wedding_default_preset_id_v1';
+
+export const BUILTIN_AND_RECOMMENDED_PRESETS = [
+  {
+    id: 'preset_builtin_musicbox',
+    name: 'กล่องดนตรีงานแต่งโรแมนติก (Built-in Wedding Music Box)',
+    description: 'เสียงกล่องดนตรีและเปียโนหวานละมุนของระบบ ไม่ใช้เน็ต ไม่ติดโฆษณา 100%',
+    music_mode: 'builtin',
+    lobbyUrl: '',
+    playUrl: '',
+    winnerUrl: '',
+    isSystem: true
+  },
   {
     id: 'preset_sweet_piano',
-    name: 'เซ็ตเพลงเปียโนงานแต่งโรแมนติก & สดใส (Romantic Wedding Piano Set)',
-    description: 'เปียโนหวานละมุนช่วงรอแขก + จังหวะสนุกช่วงเล่นเกม + เพลงฉลองผู้ชนะ',
+    name: 'เซ็ตเปียโนงานแต่งหวานละมุน & สดใส (Romantic Wedding Piano YouTube)',
+    description: 'เปียโนโรแมนติกช่วงรอแขก + จังหวะสนุกช่วงเล่นเกม + เพลงฉลองผู้ชนะ',
+    music_mode: 'youtube',
     lobbyUrl: 'https://www.youtube.com/watch?v=2ccaHpy5Ewo',
     playUrl: 'https://www.youtube.com/watch?v=5qap5aO4i9A',
-    winnerUrl: 'https://www.youtube.com/watch?v=ZbZSe6N_BXs'
+    winnerUrl: 'https://www.youtube.com/watch?v=ZbZSe6N_BXs',
+    isSystem: true
   },
   {
     id: 'preset_acoustic_love',
-    name: 'เซ็ตเพลงอะคูสติก & แจ๊สคาเฟ่ในสวน (Garden Wedding Acoustic & Bossa)',
+    name: 'เซ็ตอะคูสติก & แจ๊สงานแต่งในสวน (Garden Acoustic & Bossa YouTube)',
     description: 'กีตาร์อะคูสติกอบอุ่นเหมาะกับงานแต่งในสวนและงานเลี้ยงฉลอง',
+    music_mode: 'youtube',
     lobbyUrl: 'https://www.youtube.com/watch?v=Dx5qFachd3A',
     playUrl: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
-    winnerUrl: 'https://www.youtube.com/watch?v=c1K4_2o3DqQ'
+    winnerUrl: 'https://www.youtube.com/watch?v=c1K4_2o3DqQ',
+    isSystem: true
   }
 ];
+
+// Keep backwards-compatible export
+export const RECOMMENDED_YOUTUBE_PRESETS = BUILTIN_AND_RECOMMENDED_PRESETS.filter(
+  (p) => p.music_mode === 'youtube'
+);
 
 export const MUSIC_SOURCES_GUIDE = [
   {
@@ -35,10 +57,110 @@ export const MUSIC_SOURCES_GUIDE = [
     detail: 'คัดลอกลิงก์จากช่อง YouTube (เช่น https://www.youtube.com/watch?v=... หรือ https://youtu.be/...) มาวางในช่องทั้ง 3 ช่วงได้ทันที'
   },
   {
-    title: '3. เพลงธีมประจำตัวบ่าวสาว (Couple Theme Song บน YouTube)',
-    detail: 'นำลิงก์ MV เพลงรักที่บ่าวสาวชอบมาใส่ในช่วงรอแขก (Lobby) และช่วงประกาศรางวัล (Winner) เพื่อสร้างบรรยากาศสุดพิเศษในงาน'
+    title: '3. บันทึกเป็น Preset เก็บไว้ใช้ในงานถัดไป',
+    detail: 'เมื่อได้ชุดเพลง 3 ช่วงที่ถูกใจแล้ว กดปุ่ม "บันทึกเป็น Preset ใหม่" เพื่อเก็บไว้เลือกใช้ในเกมอื่นๆ พร้อมกดฟังพรีวิวได้ตลอดเวลา'
   }
 ];
+
+export function getCustomMusicPresets() {
+  try {
+    const raw = localStorage.getItem(PRESETS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function getAllMusicPresets() {
+  const custom = getCustomMusicPresets();
+  return [...BUILTIN_AND_RECOMMENDED_PRESETS, ...custom];
+}
+
+export function saveCustomMusicPreset({
+  id,
+  name,
+  description,
+  music_mode = 'youtube',
+  lobbyUrl = '',
+  playUrl = '',
+  winnerUrl = ''
+}) {
+  const custom = getCustomMusicPresets();
+  const presetId = id || `custom_preset_${Date.now()}`;
+  const newPreset = {
+    id: presetId,
+    name: (name || 'ชุดเพลงงานแต่งของฉัน').trim(),
+    description:
+      (description || '').trim() ||
+      (music_mode === 'builtin'
+        ? 'เพลงกล่องดนตรีงานแต่งของระบบ'
+        : 'ชุดลิงก์เพลง YouTube 3 ช่วงที่บันทึกไว้'),
+    music_mode: music_mode || 'youtube',
+    lobbyUrl: (lobbyUrl || '').trim(),
+    playUrl: (playUrl || '').trim(),
+    winnerUrl: (winnerUrl || '').trim(),
+    isSystem: false,
+    createdAt: new Date().toISOString()
+  };
+
+  const existingIdx = custom.findIndex((p) => p.id === presetId);
+  if (existingIdx >= 0) {
+    custom[existingIdx] = newPreset;
+  } else {
+    custom.unshift(newPreset);
+  }
+
+  try {
+    localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(custom));
+  } catch {
+    // Ignore storage error
+  }
+  return newPreset;
+}
+
+export function deleteCustomMusicPreset(presetId) {
+  const custom = getCustomMusicPresets().filter((p) => p.id !== presetId);
+  try {
+    localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(custom));
+    if (getDefaultPresetId() === presetId) {
+      localStorage.removeItem(DEFAULT_PRESET_ID_KEY);
+    }
+  } catch {
+    // Ignore
+  }
+  return custom;
+}
+
+export function getDefaultPresetId() {
+  try {
+    return localStorage.getItem(DEFAULT_PRESET_ID_KEY) || 'preset_builtin_musicbox';
+  } catch {
+    return 'preset_builtin_musicbox';
+  }
+}
+
+export function setDefaultPresetId(presetId) {
+  try {
+    localStorage.setItem(DEFAULT_PRESET_ID_KEY, presetId);
+  } catch {
+    // Ignore
+  }
+}
+
+export function getDefaultMusicConfig() {
+  const defaultId = getDefaultPresetId();
+  const all = getAllMusicPresets();
+  const found = all.find((p) => p.id === defaultId) || BUILTIN_AND_RECOMMENDED_PRESETS[0];
+  return {
+    music_preset_id: found.id,
+    music_mode: found.music_mode || 'builtin',
+    music_lobby_yt: found.lobbyUrl || '',
+    music_play_yt: found.playUrl || '',
+    music_winner_yt: found.winnerUrl || ''
+  };
+}
 
 export function extractYouTubeId(url) {
   if (!url || typeof url !== 'string') return null;
@@ -51,7 +173,6 @@ export function extractYouTubeId(url) {
   if (match && match[1]) {
     return match[1];
   }
-  // If user pasted raw 11-char video ID
   if (/^[a-zA-Z0-9_-]{11}$/.test(clean)) {
     return clean;
   }
@@ -101,7 +222,6 @@ class WeddingSynthesizer {
     osc.type = type;
     osc.frequency.setValueAtTime(freq, now);
 
-    // Subtle warm harmonic overtone for music-box / romantic electric piano timbre
     subOsc.type = 'triangle';
     subOsc.frequency.setValueAtTime(freq * 2, now);
 
@@ -134,11 +254,7 @@ class WeddingSynthesizer {
     this.currentPhase = phase;
     this.stepIndex = 0;
 
-    // Romantic note frequencies (Hz)
-    // C4=261.63, D4=293.66, E4=329.63, F4=349.23, G4=392.00, A4=440.00, B4=493.88
-    // C5=523.25, D5=587.33, E5=659.25, F5=698.46, G5=783.99, A5=880.00, B5=987.77, C6=1046.50
     const lobbyMelody = [
-      // Canon / Romantic Wedding Music Box Arpeggio in C Major / G Major
       { notes: [261.63, 523.25, 659.25], dur: 1.1 },
       { notes: [783.99], dur: 0.7 },
       { notes: [659.25], dur: 0.7 },
@@ -160,7 +276,6 @@ class WeddingSynthesizer {
     ];
 
     const gameplayMelody = [
-      // Cute Upbeat Bossa / Pop Marimba for Active Quiz & Bingo
       { notes: [261.63, 523.25], dur: 0.35 },
       { notes: [659.25], dur: 0.35 },
       { notes: [783.99], dur: 0.45 },
@@ -180,7 +295,6 @@ class WeddingSynthesizer {
     ];
 
     const winnerMelody = [
-      // Grand Romantic Celebration Fanfare & Sparkling Chimes
       { notes: [261.63, 523.25, 659.25], dur: 0.5 },
       { notes: [523.25, 659.25, 783.99], dur: 0.5 },
       { notes: [523.25, 783.99, 1046.50], dur: 1.0 },
@@ -228,3 +342,4 @@ class WeddingSynthesizer {
 }
 
 export const builtInSynth = new WeddingSynthesizer();
+export const previewSynth = new WeddingSynthesizer();
