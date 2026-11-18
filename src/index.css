@@ -1,86 +1,76 @@
 :root {
-  /* Editorial Wedding & Event Palette - Default: Warm Rose Gold & Champagne Ivory */
-  --bg-primary: #faf6f2;
-  --bg-secondary: #f3ebe3;
+  /* Clean Airy Kahoot-Inspired Workspace Palette */
+  --bg-canvas: #f2f2f2;
+  --bg-primary: #f4f5f7;
+  --bg-secondary: #eaecef;
   --bg-surface: #ffffff;
-  --bg-elevated: #fffcf9;
-  --bg-stage: #1c1518;
-  --bg-stage-card: #281f23;
+  --bg-elevated: #ffffff;
+  --bg-stage: #18122b;
+  --bg-stage-card: #251d3a;
 
-  --text-primary: #23191d;
-  --text-secondary: #5e4c53;
-  --text-muted: #8c7880;
-  --text-on-dark: #fdf9f6;
+  --text-primary: #1f2328;
+  --text-secondary: #57606a;
+  --text-muted: #8c959f;
+  --text-on-dark: #ffffff;
 
-  --accent-primary: #b85d6f;
-  --accent-primary-hover: #9e4859;
-  --accent-secondary: #c89b57;
-  --accent-soft: #f5e1e5;
-  --accent-gold-soft: #fbf3e4;
+  /* Kahoot Signature Blue & Accents */
+  --accent-primary: #1368ce;
+  --accent-primary-hover: #0d54a8;
+  --accent-navy: #0a336b;
+  --accent-secondary: #e21b3c;
+  --accent-soft: #e8f1fc;
+  --accent-gold-soft: #fff8e6;
 
-  --border-subtle: #e6dad0;
-  --border-strong: #d4c1b4;
+  --border-subtle: #e1e4e8;
+  --border-strong: #d0d7de;
 
-  /* Kahoot 4-Choice Colors (Refined Jewel Tones for High Legibility) */
-  --choice-a-bg: #c93b52;
-  --choice-a-hover: #b22d43;
-  --choice-b-bg: #256399;
-  --choice-b-hover: #1b4f7d;
-  --choice-c-bg: #c98622;
-  --choice-c-hover: #af7217;
-  --choice-d-bg: #2a7b5a;
-  --choice-d-hover: #1f6347;
+  /* Kahoot Official 4-Choice Colors */
+  --choice-a-bg: #e21b3c;
+  --choice-a-hover: #c81532;
+  --choice-b-bg: #1368ce;
+  --choice-b-hover: #0f56ab;
+  --choice-c-bg: #d89e00;
+  --choice-c-hover: #b88600;
+  --choice-d-bg: #26890c;
+  --choice-d-hover: #1e6f09;
 
-  --status-success: #247a54;
-  --status-success-bg: #e7f6ee;
-  --status-warning: #b87514;
-  --status-warning-bg: #fef5e6;
-  --status-danger: #c03546;
-  --status-danger-bg: #fdebec;
+  --status-success: #1a7f37;
+  --status-success-bg: #dafbe1;
+  --status-warning: #9a6700;
+  --status-warning-bg: #fff8c5;
+  --status-danger: #cf222e;
+  --status-danger-bg: #ffebe9;
 
-  --shadow-sm: 0 2px 8px rgba(35, 25, 29, 0.05);
-  --shadow-md: 0 8px 24px rgba(35, 25, 29, 0.08);
-  --shadow-lg: 0 18px 42px rgba(35, 25, 29, 0.13);
+  --shadow-xs: 0 1px 2px rgba(31, 35, 40, 0.06);
+  --shadow-sm: 0 2px 6px rgba(31, 35, 40, 0.07);
+  --shadow-md: 0 6px 18px rgba(31, 35, 40, 0.1);
+  --shadow-lg: 0 16px 36px rgba(31, 35, 40, 0.14);
 
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 
   --font-sans: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: 'Kanit', 'Prompt', sans-serif;
-  --font-serif: 'Cormorant Garamond', Georgia, serif;
+}
+
+[data-theme="rose_gold"] {
+  --bg-stage: #23151c;
+  --bg-stage-card: #331f29;
 }
 
 [data-theme="royal_navy"] {
-  --bg-primary: #f4f6fa;
-  --bg-secondary: #e8ecf4;
-  --accent-primary: #1e3a6e;
-  --accent-primary-hover: #152b54;
-  --accent-secondary: #c59b38;
-  --accent-soft: #e2e8f5;
   --bg-stage: #0f1c36;
   --bg-stage-card: #182a4f;
 }
 
 [data-theme="champagne_ivory"] {
-  --bg-primary: #fbf9f4;
-  --bg-secondary: #f1ede2;
-  --accent-primary: #566b58;
-  --accent-primary-hover: #435545;
-  --accent-secondary: #b99352;
-  --accent-soft: #e6ede6;
   --bg-stage: #1d261e;
   --bg-stage-card: #28342a;
 }
 
 [data-theme="seminar_slate"] {
-  --bg-primary: #f5f7f9;
-  --bg-secondary: #e9eef3;
-  --accent-primary: #175c7d;
-  --accent-primary-hover: #104661;
-  --accent-secondary: #d97724;
-  --accent-soft: #e1eff6;
   --bg-stage: #101f2b;
   --bg-stage-card: #192f40;
 }
@@ -93,9 +83,9 @@
 
 html, body {
   font-family: var(--font-sans);
-  background-color: var(--bg-primary);
+  background-color: var(--bg-canvas);
   color: var(--text-primary);
-  line-height: 1.55;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
@@ -111,139 +101,524 @@ button {
   background: none;
 }
 
-/* Top Global Navigation Bar */
-.top-navbar {
+/* ============================================================================
+   KAHOOT-STYLE APP SHELL (TOP HEADER + LEFT SIDEBAR + AIRY WORKSPACE)
+   ============================================================================ */
+
+.kahoot-top-header {
   position: sticky;
   top: 0;
-  z-index: 100;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
+  z-index: 120;
+  height: 58px;
+  background: #ffffff;
   border-bottom: 1px solid var(--border-subtle);
-  padding: 0.75rem 1.5rem;
+  padding: 0 1.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  flex-wrap: wrap;
 }
 
-.brand-group {
+.kahoot-logo-group {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.55rem;
   cursor: pointer;
+  user-select: none;
 }
 
-.brand-emblem {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  background: var(--accent-primary);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: 1.35rem;
-  box-shadow: var(--shadow-sm);
-}
-
-.brand-title {
+.kahoot-wordmark {
   font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1.15rem;
-  color: var(--text-primary);
-  line-height: 1.2;
+  font-weight: 800;
+  font-size: 1.55rem;
+  color: #46178f;
+  letter-spacing: -0.02em;
+  line-height: 1;
 }
 
-.brand-subtitle {
+.kahoot-one-badge {
+  background: #46178f;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: 0.78rem;
-  color: var(--text-muted);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
 }
 
-.nav-mode-switcher {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: var(--bg-secondary);
-  padding: 0.3rem;
-  border-radius: 999px;
-  border: 1px solid var(--border-subtle);
+.kahoot-top-search {
+  flex: 1;
+  max-width: 440px;
+  position: relative;
 }
 
-.nav-pill-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.45rem 1rem;
-  border-radius: 999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  transition: all 0.2s ease;
-}
-
-.nav-pill-btn:hover {
+.kahoot-top-search input {
+  width: 100%;
+  height: 38px;
+  padding: 0 1rem 0 2.35rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: #ffffff;
+  font-size: 0.88rem;
   color: var(--text-primary);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.nav-pill-btn.active {
-  background: var(--bg-surface);
-  color: var(--accent-primary);
-  box-shadow: var(--shadow-sm);
-  font-weight: 600;
+.kahoot-top-search input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
-.nav-right-actions {
+.kahoot-top-actions {
   display: flex;
   align-items: center;
   gap: 0.65rem;
 }
 
-.db-status-chip {
+.btn-kahoot-create {
+  background: var(--accent-primary);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.48rem 1.15rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 0 #0b4a94;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.btn-kahoot-create:hover {
+  background: var(--accent-primary-hover);
+}
+
+.btn-kahoot-create:active {
+  transform: translateY(1px);
+}
+
+/* Main App Body with Left Sidebar */
+.kahoot-app-body {
+  display: flex;
+  min-height: calc(100vh - 58px);
+}
+
+.kahoot-left-sidebar {
+  width: 215px;
+  background: #ffffff;
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.85rem 0.6rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 860px) {
+  .kahoot-left-sidebar {
+    width: 68px;
+    padding: 0.75rem 0.35rem;
+  }
+  .kahoot-left-sidebar .sidebar-text,
+  .kahoot-left-sidebar .workspace-profile-info {
+    display: none;
+  }
+}
+
+.workspace-profile-box {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.65rem;
+  margin-bottom: 0.65rem;
+  border-radius: 8px;
+}
+
+.workspace-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #f0f2f5;
+  border: 1px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.workspace-name {
+  font-weight: 600;
+  font-size: 0.84rem;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.workspace-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.sidebar-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.sidebar-nav-item:hover {
+  background: #f3f4f6;
+  color: var(--text-primary);
+}
+
+.sidebar-nav-item.active {
+  background: var(--accent-navy);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Sub-folder Rail (like Kahoot Library sub-menu) */
+.kahoot-library-subrail {
+  width: 195px;
+  background: #fafafa;
+  border-right: 1px solid var(--border-subtle);
+  padding: 1rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1100px) {
+  .kahoot-library-subrail {
+    display: none;
+  }
+}
+
+.subrail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.subrail-item:hover {
+  background: #eef1f5;
+  color: var(--text-primary);
+}
+
+.subrail-item.active {
+  background: var(--accent-soft);
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+/* Main Workspace Canvas */
+.kahoot-main-canvas {
+  flex: 1;
+  background: var(--bg-canvas);
+  padding: 1.35rem 1.75rem 3rem;
+  overflow-x: hidden;
+}
+
+/* Top Filter Tabs inside Library Canvas ("ล่าสุด | ฉบับร่าง | รายการโปรด...") */
+.kahoot-canvas-tabs {
+  display: inline-flex;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 0.2rem;
+  margin-bottom: 1rem;
+  gap: 0.15rem;
+  flex-wrap: wrap;
+}
+
+.kahoot-canvas-tab {
+  padding: 0.4rem 0.95rem;
+  border-radius: 4px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+
+.kahoot-canvas-tab:hover {
+  color: var(--text-primary);
+}
+
+.kahoot-canvas-tab.active {
+  background: var(--accent-soft);
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+/* Toolbar row under tabs (Search + Grid/List Toggle) */
+.kahoot-toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.15rem;
+  flex-wrap: wrap;
+}
+
+.kahoot-local-search {
+  position: relative;
+  width: 280px;
+}
+
+.kahoot-local-search input {
+  width: 100%;
+  height: 36px;
+  padding: 0 0.85rem 0 2.15rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: #ffffff;
+  font-size: 0.85rem;
+}
+
+.view-toggle-group {
+  display: inline-flex;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.view-toggle-btn {
+  padding: 0.42rem 0.65rem;
+  color: var(--text-secondary);
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.4rem 0.85rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 500;
+  justify-content: center;
+}
+
+.view-toggle-btn.active {
+  background: #e6e8eb;
+  color: var(--text-primary);
+}
+
+/* ============================================================================
+   KAHOOT COMPACT THUMBNAIL CARD GRID (5-7 Cards per Row like create.kahoot.it)
+   ============================================================================ */
+.kahoot-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+  gap: 1rem;
+}
+
+.kahoot-thumb-card {
+  background: #ffffff;
   border: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+  position: relative;
+}
+
+.kahoot-thumb-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.kahoot-card-topstrip {
+  padding: 0.4rem 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 600;
   color: var(--text-secondary);
-  transition: all 0.2s ease;
+  background: #ffffff;
 }
 
-.db-status-chip:hover {
-  border-color: var(--accent-primary);
+.kahoot-mini-type-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.kahoot-color-square {
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
 }
 
-.status-dot.online {
-  background: var(--status-success);
+.kahoot-color-square span:nth-child(1) { background: var(--choice-a-bg); }
+.kahoot-color-square span:nth-child(2) { background: var(--choice-b-bg); }
+.kahoot-color-square span:nth-child(3) { background: var(--choice-c-bg); }
+.kahoot-color-square span:nth-child(4) { background: var(--choice-d-bg); }
+
+/* 16:10 Thumbnail Box with Couple Photo or Generated Romantic Cover */
+.kahoot-card-cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background: #f0e6ea;
+  overflow: hidden;
+  cursor: pointer;
 }
 
-.status-dot.local {
-  background: var(--accent-secondary);
+.kahoot-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.25s ease;
 }
 
-/* Common Buttons */
+.kahoot-thumb-card:hover .kahoot-card-cover img {
+  transform: scale(1.03);
+}
+
+.kahoot-generated-cover {
+  width: 100%;
+  height: 100%;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+}
+
+.kahoot-cover-pill-count {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  background: rgba(20, 20, 25, 0.82);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.16rem 0.5rem;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.kahoot-cover-mode-ribbon {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  background: rgba(226, 27, 60, 0.92);
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.14rem 0.48rem;
+  border-radius: 4px;
+}
+
+.kahoot-cover-mode-ribbon.bingo {
+  background: rgba(216, 158, 0, 0.95);
+  color: #1f2328;
+}
+
+.kahoot-cover-hover-play {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 51, 107, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.kahoot-card-cover:hover .kahoot-cover-hover-play {
+  opacity: 1;
+}
+
+.kahoot-card-body {
+  padding: 0.65rem 0.75rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  gap: 0.45rem;
+}
+
+.kahoot-card-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.kahoot-card-couple-title {
+  font-family: var(--font-display);
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.kahoot-card-couple-title:hover {
+  color: var(--accent-primary);
+}
+
+.kahoot-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  padding-top: 0.25rem;
+}
+
+.kahoot-card-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid #f0f2f4;
+}
+
+/* ============================================================================
+   COMMON BUTTONS & UTILITIES
+   ============================================================================ */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1.25rem;
+  gap: 0.45rem;
+  padding: 0.55rem 1.05rem;
   border-radius: var(--radius-md);
   font-weight: 500;
-  font-size: 0.92rem;
-  transition: all 0.18s ease;
+  font-size: 0.88rem;
+  transition: all 0.16s ease;
   white-space: nowrap;
 }
 
@@ -255,50 +630,46 @@ button {
 .btn-primary {
   background: var(--accent-primary);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(184, 93, 111, 0.24);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--accent-primary-hover);
-  transform: translateY(-1px);
 }
 
 .btn-gold {
-  background: var(--accent-secondary);
+  background: #d89e00;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(200, 155, 87, 0.25);
 }
 
 .btn-gold:hover:not(:disabled) {
-  filter: brightness(0.94);
-  transform: translateY(-1px);
+  background: #b88600;
 }
 
 .btn-secondary {
-  background: var(--bg-surface);
+  background: #ffffff;
   color: var(--text-primary);
   border: 1px solid var(--border-strong);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--bg-secondary);
+  background: #f3f4f6;
 }
 
 .btn-ghost {
   background: transparent;
   color: var(--text-secondary);
-  padding: 0.5rem 0.85rem;
+  padding: 0.4rem 0.65rem;
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: var(--bg-secondary);
+  background: #f0f2f5;
   color: var(--text-primary);
 }
 
 .btn-danger {
   background: var(--status-danger-bg);
   color: var(--status-danger);
-  border: 1px solid rgba(192, 53, 70, 0.25);
+  border: 1px solid rgba(207, 34, 46, 0.2);
 }
 
 .btn-danger:hover:not(:disabled) {
@@ -307,93 +678,31 @@ button {
 }
 
 .btn-lg {
-  padding: 0.9rem 1.75rem;
-  font-size: 1.05rem;
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
   font-weight: 600;
   border-radius: var(--radius-lg);
 }
 
-/* Layout Containers */
 .page-container {
-  max-width: 1320px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 1.75rem 1.5rem 4rem;
 }
 
-/* Admin Backoffice Header & Sub-tabs */
-.admin-hero-banner {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
-  padding: 1.75rem 2rem;
-  margin-bottom: 1.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-  box-shadow: var(--shadow-sm);
-}
-
-.admin-hero-text h1 {
-  font-family: var(--font-display);
-  font-size: 1.65rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 0.35rem;
-}
-
-.admin-hero-text p {
-  color: var(--text-secondary);
-  font-size: 0.95rem;
-}
-
-.admin-subnav {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 0.75rem;
-  overflow-x: auto;
-}
-
-.subnav-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1.2rem;
-  border-radius: var(--radius-md);
-  font-weight: 500;
-  font-size: 0.92rem;
-  color: var(--text-secondary);
-  background: transparent;
-  transition: all 0.18s ease;
-}
-
-.subnav-tab:hover {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-}
-
-.subnav-tab.active {
-  background: var(--accent-primary);
-  color: #ffffff;
-}
-
-/* Summary Metrics Row */
+/* Metrics Row */
 .metrics-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 1.15rem;
-  margin-bottom: 1.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.35rem;
 }
 
 .metric-card {
-  background: var(--bg-surface);
+  background: #ffffff;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 1.35rem 1.5rem;
-  box-shadow: var(--shadow-sm);
+  padding: 1.15rem 1.35rem;
+  box-shadow: var(--shadow-xs);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -404,14 +713,14 @@ button {
   align-items: center;
   justify-content: space-between;
   color: var(--text-secondary);
-  font-size: 0.88rem;
-  margin-bottom: 0.65rem;
+  font-size: 0.84rem;
+  margin-bottom: 0.5rem;
 }
 
 .metric-icon-box {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   background: var(--accent-soft);
   color: var(--accent-primary);
   display: flex;
@@ -421,73 +730,40 @@ button {
 
 .metric-value {
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.15;
 }
 
 .metric-caption {
-  margin-top: 0.4rem;
-  font-size: 0.8rem;
+  margin-top: 0.35rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
-}
-
-/* Game Catalog Grid */
-.games-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.25rem;
-}
-
-.game-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 1.15rem;
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.game-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.game-card-badges {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  flex-wrap: wrap;
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.28rem 0.75rem;
+  gap: 0.3rem;
+  padding: 0.22rem 0.65rem;
   border-radius: 999px;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 600;
 }
 
 .badge-quiz {
-  background: #fce8ec;
-  color: #a9384d;
+  background: #ffebe9;
+  color: #cf222e;
 }
 
 .badge-bingo {
-  background: #fbf0dc;
-  color: #9e6b18;
+  background: #fff8c5;
+  color: #9a6700;
 }
 
 .badge-event {
-  background: var(--bg-secondary);
+  background: #eaeef2;
   color: var(--text-secondary);
 }
 
@@ -496,102 +772,51 @@ button {
   color: var(--status-success);
 }
 
-.game-card-title {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-top: 0.5rem;
-}
-
-.game-card-couple {
-  font-size: 0.9rem;
-  color: var(--accent-primary);
-  font-weight: 500;
-  margin-top: 0.2rem;
-}
-
-.game-card-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.85rem;
-  font-size: 0.83rem;
-  color: var(--text-secondary);
-  padding-top: 0.65rem;
-  border-top: 1px dashed var(--border-subtle);
-}
-
-.game-card-meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.client-license-box {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 0.65rem 0.85rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  font-size: 0.82rem;
-}
-
 .license-code-tag {
   font-family: monospace;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   color: var(--accent-primary);
-  background: var(--bg-surface);
-  padding: 0.2rem 0.55rem;
-  border-radius: 6px;
-  border: 1px solid var(--border-subtle);
-}
-
-.game-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  background: var(--accent-soft);
+  padding: 0.16rem 0.5rem;
+  border-radius: 4px;
 }
 
 /* Forms & Builder */
 .builder-panel {
-  background: var(--bg-surface);
+  background: #ffffff;
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
-  padding: 2rem;
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-xs);
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.25rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.38rem;
 }
 
 .form-group label {
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .form-input, .form-select, .form-textarea {
-  padding: 0.7rem 0.95rem;
+  padding: 0.6rem 0.85rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
-  background: var(--bg-elevated);
+  background: #ffffff;
   color: var(--text-primary);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  font-size: 0.9rem;
 }
 
 .form-input:focus, .form-select:focus, .form-textarea:focus {
@@ -602,18 +827,18 @@ button {
 
 .mode-selector-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.35rem;
 }
 
 .mode-option-card {
   border: 2px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 1.25rem;
+  padding: 1rem;
   cursor: pointer;
-  background: var(--bg-elevated);
-  transition: all 0.2s ease;
+  background: #ffffff;
+  transition: all 0.18s ease;
   text-align: left;
 }
 
@@ -628,48 +853,48 @@ button {
 
 .mode-option-title {
   font-family: var(--font-display);
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.3rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .question-editor-list {
   display: flex;
   flex-direction: column;
-  gap: 1.15rem;
-  margin-top: 1.25rem;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 .question-editor-item {
-  background: var(--bg-primary);
+  background: #f8f9fa;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 1.35rem;
+  padding: 1.15rem;
 }
 
 .question-editor-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.9rem;
+  margin-bottom: 0.75rem;
 }
 
 .options-editor-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 0.85rem;
-  margin-top: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
 }
 
 .option-input-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--bg-surface);
-  padding: 0.45rem 0.65rem;
+  background: #ffffff;
+  padding: 0.4rem 0.65rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
 }
@@ -681,11 +906,11 @@ button {
 
 /* History & Reports Table */
 .report-table-wrapper {
-  background: var(--bg-surface);
+  background: #ffffff;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   overflow-x: auto;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
 }
 
 .report-table {
@@ -695,18 +920,18 @@ button {
 }
 
 .report-table th {
-  background: var(--bg-secondary);
-  padding: 0.95rem 1.25rem;
-  font-size: 0.84rem;
+  background: #f6f8fa;
+  padding: 0.85rem 1.1rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-secondary);
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .report-table td {
-  padding: 1rem 1.25rem;
+  padding: 0.85rem 1.1rem;
   border-bottom: 1px solid var(--border-subtle);
-  font-size: 0.92rem;
+  font-size: 0.88rem;
 }
 
 .report-table tr:last-child td {
@@ -714,17 +939,17 @@ button {
 }
 
 .report-table tr:hover td {
-  background: var(--bg-elevated);
+  background: #f9fbfd;
 }
 
 /* ============================================================================
-   STAGE / PROJECTOR HOST VIEW (Designed for Big Screen & LED Wall in Weddings)
+   STAGE / PROJECTOR HOST VIEW
    ============================================================================ */
 .stage-screen {
-  min-height: calc(100vh - 68px);
+  min-height: calc(100vh - 58px);
   background: var(--bg-stage);
   color: var(--text-on-dark);
-  padding: 1.75rem 2.25rem;
+  padding: 1.5rem 2rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -736,13 +961,13 @@ button {
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
-  padding-bottom: 1.25rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .stage-event-title {
   font-family: var(--font-display);
-  font-size: 1.55rem;
+  font-size: 1.45rem;
   font-weight: 600;
   color: #ffffff;
 }
@@ -751,21 +976,20 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.35rem 1rem;
+  padding: 0.32rem 0.9rem;
   border-radius: 999px;
   background: rgba(200, 155, 87, 0.22);
   border: 1px solid rgba(200, 155, 87, 0.5);
   color: #f6d59e;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
 }
 
-/* Lobby Layout with Giant QR Code + Guest Stream */
 .lobby-grid {
   display: grid;
-  grid-template-columns: 380px 1fr;
-  gap: 2rem;
-  margin: 1.75rem 0;
+  grid-template-columns: 360px 1fr;
+  gap: 1.75rem;
+  margin: 1.5rem 0;
   align-items: stretch;
 }
 
@@ -779,7 +1003,7 @@ button {
   background: #ffffff;
   color: var(--text-primary);
   border-radius: var(--radius-xl);
-  padding: 1.75rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -788,16 +1012,16 @@ button {
 }
 
 .qr-image-frame {
-  width: 260px;
-  height: 260px;
-  padding: 0.75rem;
+  width: 245px;
+  height: 245px;
+  padding: 0.65rem;
   border-radius: var(--radius-lg);
   border: 2px solid var(--border-subtle);
   background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0.75rem 0 1rem;
+  margin: 0.65rem 0 0.85rem;
 }
 
 .qr-image-frame img {
@@ -807,16 +1031,16 @@ button {
 }
 
 .room-pin-box {
-  background: var(--bg-primary);
+  background: #f6f8fa;
   border: 2px dashed var(--accent-primary);
   border-radius: var(--radius-lg);
-  padding: 0.75rem 1.5rem;
+  padding: 0.65rem 1.25rem;
   width: 100%;
-  margin-top: 0.5rem;
+  margin-top: 0.35rem;
 }
 
 .room-pin-label {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-secondary);
@@ -824,7 +1048,7 @@ button {
 
 .room-pin-digits {
   font-family: var(--font-display);
-  font-size: 2.35rem;
+  font-size: 2.2rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   color: var(--accent-primary);
@@ -835,7 +1059,7 @@ button {
   background: var(--bg-stage-card);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-xl);
-  padding: 1.75rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -847,7 +1071,7 @@ button {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.15rem;
 }
 
 .capacity-meter {
@@ -858,7 +1082,7 @@ button {
 
 .capacity-count-big {
   font-family: var(--font-display);
-  font-size: 2.25rem;
+  font-size: 2.1rem;
   font-weight: 700;
   color: #f6d59e;
 }
@@ -866,8 +1090,8 @@ button {
 .guests-wall-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  max-height: 410px;
+  gap: 0.65rem;
+  max-height: 390px;
   overflow-y: auto;
   padding: 0.5rem 0;
   align-content: flex-start;
@@ -876,49 +1100,36 @@ button {
 .guest-chip-card {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.5rem;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.16);
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 0.95rem;
   border-radius: 999px;
-  font-size: 0.98rem;
+  font-size: 0.94rem;
   font-weight: 500;
   color: #ffffff;
-  animation: popIn 0.28s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
 
-@keyframes popIn {
-  from {
-    opacity: 0;
-    transform: scale(0.8) translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-/* Stage Active Question Screen */
 .stage-question-box {
   background: var(--bg-stage-card);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-xl);
-  padding: 2.25rem;
-  margin: 1.25rem 0;
+  padding: 2rem;
+  margin: 1.15rem 0;
   text-align: center;
 }
 
 .stage-question-number {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: #f6d59e;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
 .stage-question-title {
   font-family: var(--font-display);
-  font-size: clamp(1.6rem, 3.2vw, 2.65rem);
+  font-size: clamp(1.5rem, 3vw, 2.4rem);
   font-weight: 600;
   color: #ffffff;
   line-height: 1.3;
@@ -931,12 +1142,12 @@ button {
   align-items: center;
   justify-content: center;
   gap: 2rem;
-  margin: 1.5rem 0;
+  margin: 1.35rem 0;
 }
 
 .timer-circle {
-  width: 88px;
-  height: 88px;
+  width: 82px;
+  height: 82px;
   border-radius: 50%;
   background: rgba(200, 155, 87, 0.2);
   border: 3px solid #f6d59e;
@@ -945,7 +1156,7 @@ button {
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 1.85rem;
   font-weight: 700;
   color: #ffffff;
 }
@@ -953,8 +1164,8 @@ button {
 .stage-choices-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.15rem;
-  margin-top: 1.5rem;
+  gap: 1rem;
+  margin-top: 1.25rem;
 }
 
 @media (max-width: 768px) {
@@ -965,16 +1176,16 @@ button {
 
 .stage-choice-card {
   border-radius: var(--radius-lg);
-  padding: 1.5rem 1.75rem;
+  padding: 1.35rem 1.5rem;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   font-family: var(--font-display);
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 600;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
   transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
@@ -994,23 +1205,22 @@ button {
 }
 
 .choice-shape-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.2);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   flex-shrink: 0;
 }
 
-/* Stage Bingo Caller & Winners Panel */
 .bingo-stage-layout {
   display: grid;
   grid-template-columns: 1.2fr 1fr;
-  gap: 1.75rem;
-  margin: 1.5rem 0;
+  gap: 1.5rem;
+  margin: 1.35rem 0;
 }
 
 @media (max-width: 960px) {
@@ -1023,7 +1233,7 @@ button {
   background: var(--bg-stage-card);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-xl);
-  padding: 2rem;
+  padding: 1.75rem;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -1032,8 +1242,8 @@ button {
 }
 
 .bingo-big-ball {
-  width: 165px;
-  height: 165px;
+  width: 155px;
+  height: 155px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #f9e2b3, #c89b57 70%, #8f682b);
   color: #1c1518;
@@ -1041,10 +1251,10 @@ button {
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
-  font-size: 2.75rem;
+  font-size: 2.5rem;
   font-weight: 700;
   box-shadow: 0 16px 40px rgba(200, 155, 87, 0.35);
-  margin: 1.25rem 0;
+  margin: 1.15rem 0;
   padding: 1rem;
   text-align: center;
   line-height: 1.15;
@@ -1053,28 +1263,28 @@ button {
 .drawn-history-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.45rem;
   justify-content: center;
-  margin-top: 1rem;
+  margin-top: 0.85rem;
 }
 
 .drawn-pill {
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #ffffff;
-  padding: 0.35rem 0.85rem;
+  padding: 0.3rem 0.75rem;
   border-radius: 999px;
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
 }
 
 /* ============================================================================
-   GUEST MOBILE PLAYER VIEW (Optimized for Smartphone Portrait Screens)
+   GUEST MOBILE PLAYER VIEW
    ============================================================================ */
 .guest-mobile-shell {
-  max-width: 480px;
+  max-width: 460px;
   margin: 0 auto;
-  min-height: calc(100vh - 68px);
+  min-height: calc(100vh - 58px);
   padding: 1.25rem 1rem 2.5rem;
   display: flex;
   flex-direction: column;
@@ -1082,26 +1292,26 @@ button {
 }
 
 .guest-card {
-  background: var(--bg-surface);
+  background: #ffffff;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-md);
+  padding: 1.35rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .avatar-picker-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 0.5rem;
-  margin: 0.5rem 0 1rem;
+  gap: 0.45rem;
+  margin: 0.5rem 0 0.9rem;
 }
 
 .avatar-choice-btn {
-  font-size: 1.5rem;
-  padding: 0.5rem;
+  font-size: 1.4rem;
+  padding: 0.45rem;
   border-radius: var(--radius-md);
   border: 2px solid var(--border-subtle);
-  background: var(--bg-elevated);
+  background: #f8f9fa;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1117,30 +1327,25 @@ button {
 .mobile-choices-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.85rem;
-  margin-top: 1rem;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
 }
 
 .mobile-choice-btn {
-  min-height: 132px;
+  min-height: 124px;
   border-radius: var(--radius-lg);
-  padding: 1rem;
+  padding: 0.9rem;
   color: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 600;
   text-align: center;
-  box-shadow: var(--shadow-md);
-  transition: transform 0.12s ease, opacity 0.2s ease;
-}
-
-.mobile-choice-btn:active:not(:disabled) {
-  transform: scale(0.96);
+  box-shadow: var(--shadow-sm);
 }
 
 .mobile-choice-btn.choice-0 { background: var(--choice-a-bg); }
@@ -1148,11 +1353,10 @@ button {
 .mobile-choice-btn.choice-2 { background: var(--choice-c-bg); }
 .mobile-choice-btn.choice-3 { background: var(--choice-d-bg); }
 
-/* Interactive Wedding Bingo Board on Guest Phone */
 .bingo-board-grid {
   display: grid;
-  gap: 0.45rem;
-  margin: 1rem 0;
+  gap: 0.4rem;
+  margin: 0.85rem 0;
   user-select: none;
 }
 
@@ -1164,45 +1368,43 @@ button {
   aspect-ratio: 1 / 1;
   border-radius: var(--radius-md);
   border: 2px solid var(--border-strong);
-  background: var(--bg-elevated);
-  padding: 0.35rem;
+  background: #f8f9fa;
+  padding: 0.3rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-primary);
   position: relative;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
   overflow: hidden;
   word-break: break-word;
 }
 
 .bingo-board-grid.size-5 .bingo-cell {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
 }
 
 .bingo-cell.marked {
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
+  background: var(--choice-a-bg);
+  border-color: var(--choice-a-bg);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(184, 93, 111, 0.35);
 }
 
 .bingo-cell-stamp {
-  font-size: 1.15rem;
-  margin-bottom: 0.1rem;
+  font-size: 1.1rem;
+  margin-bottom: 0.08rem;
 }
 
-/* Podium Celebration */
 .podium-row {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 1.25rem;
-  margin: 2rem 0 1.5rem;
+  gap: 1.15rem;
+  margin: 1.75rem 0 1.35rem;
   flex-wrap: wrap;
 }
 
@@ -1210,8 +1412,8 @@ button {
   background: var(--bg-stage-card);
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: var(--radius-lg);
-  padding: 1.5rem 1.25rem;
-  width: 210px;
+  padding: 1.35rem 1.15rem;
+  width: 205px;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -1221,7 +1423,7 @@ button {
 .podium-column.rank-1 {
   border: 2px solid #f6d59e;
   background: linear-gradient(180deg, rgba(200, 155, 87, 0.28) 0%, var(--bg-stage-card) 100%);
-  transform: translateY(-14px);
+  transform: translateY(-12px);
 }
 
 /* Modal Dialog */
@@ -1229,22 +1431,22 @@ button {
   position: fixed;
   inset: 0;
   z-index: 250;
-  background: rgba(24, 17, 20, 0.65);
-  backdrop-filter: blur(5px);
+  background: rgba(15, 20, 28, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.25rem;
+  padding: 1.15rem;
 }
 
 .modal-content {
-  background: var(--bg-surface);
+  background: #ffffff;
   border-radius: var(--radius-xl);
   max-width: 720px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  padding: 2rem;
+  padding: 1.75rem;
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--border-subtle);
 }
@@ -1253,7 +1455,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.25rem;
-  padding-bottom: 0.85rem;
+  margin-bottom: 1.15rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border-subtle);
 }

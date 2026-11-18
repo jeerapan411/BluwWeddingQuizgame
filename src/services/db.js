@@ -340,7 +340,8 @@ function packGameForSupabase(record) {
     music_mode: record.music_mode || 'builtin',
     music_lobby_yt: record.music_lobby_yt || '',
     music_play_yt: record.music_play_yt || '',
-    music_winner_yt: record.music_winner_yt || ''
+    music_winner_yt: record.music_winner_yt || '',
+    cover_image: record.cover_image || ''
   };
 
   const cleanQuestions = Array.isArray(record.questions)
@@ -395,7 +396,8 @@ function unpackGameFromSupabase(row) {
     music_mode: row.music_mode || musicMeta.music_mode || 'builtin',
     music_lobby_yt: row.music_lobby_yt || musicMeta.music_lobby_yt || '',
     music_play_yt: row.music_play_yt || musicMeta.music_play_yt || '',
-    music_winner_yt: row.music_winner_yt || musicMeta.music_winner_yt || ''
+    music_winner_yt: row.music_winner_yt || musicMeta.music_winner_yt || '',
+    cover_image: row.cover_image || musicMeta.cover_image || ''
   };
 }
 
