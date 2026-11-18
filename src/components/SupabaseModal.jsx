@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
-import { Database, CheckCircle2, Copy, ExternalLink, X, ShieldCheck, Server } from 'lucide-react';
-import { getSupabaseConfig, saveSupabaseConfig, isSupabaseConnected } from '../services/db';
+import React, { useState, useEffect } from 'react';
+import { Database, CheckCircle2, Copy, ExternalLink, X, ShieldCheck, Server, RefreshCw } from 'lucide-react';
+import {
+  getSupabaseConfig,
+  saveSupabaseConfig,
+  checkSupabaseTablesStatus,
+  fetchGames
+} from '../services/db';
 
 const SQL_SCHEMA_SNIPPET = `-- คัดลอกไปรันใน Supabase -> SQL Editor
 CREATE TABLE IF NOT EXISTS public.games (
@@ -72,8 +77,13 @@ ALTER TABLE public.games ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.game_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.session_players ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Public access games" ON public.games;
 CREATE POLICY "Public access games" ON public.games FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access sessions" ON public.game_sessions;
 CREATE POLICY "Public access sessions" ON public.game_sessions FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access players" ON public.session_players;
 CREATE POLICY "Public access players" ON public.session_players FOR ALL USING (true) WITH CHECK (true);
 
 ALTER PUBLICATION supabase_realtime ADD TABLE public.game_sessions;
@@ -85,11 +95,33 @@ export default function SupabaseModal({ onClose, onSaved }) {
   const [anonKey, setAnonKey] = useState(current.anonKey || '');
   const [copiedSql, setCopiedSql] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
+  const [tableStatus, setTableStatus] = useState({
+    connected: false,
+    tablesReady: false,
+    message: 'กำลังตรวจสอบสถานะตารางใน Supabase...'
+  });
+  const [checking, setChecking] = useState(false);
 
-  const handleSave = (e) => {
+  const verifyStatus = async () => {
+    setChecking(true);
+    const status = await checkSupabaseTablesStatus();
+    setTableStatus(status);
+    if (status.tablesReady) {
+      await fetchGames();
+      if (onSaved) onSaved();
+    }
+    setChecking(false);
+  };
+
+  useEffect(() => {
+    verifyStatus();
+  }, []);
+
+  const handleSave = async (e) => {
     e.preventDefault();
     saveSupabaseConfig(url, anonKey);
     setSavedMsg('บันทึกการตั้งค่าเรียบร้อยแล้ว!');
+    await verifyStatus();
     if (onSaved) onSaved();
     setTimeout(() => setSavedMsg(''), 2500);
   };
@@ -99,8 +131,6 @@ export default function SupabaseModal({ onClose, onSaved }) {
     setCopiedSql(true);
     setTimeout(() => setCopiedSql(false), 2500);
   };
-
-  const connected = isSupabaseConnected();
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -121,24 +151,35 @@ export default function SupabaseModal({ onClose, onSaved }) {
           style={{
             padding: '0.9rem 1.1rem',
             borderRadius: 'var(--radius-md)',
-            background: connected ? 'var(--status-success-bg)' : 'var(--status-warning-bg)',
-            color: connected ? 'var(--status-success)' : 'var(--status-warning)',
+            background: tableStatus.tablesReady
+              ? 'var(--status-success-bg)'
+              : 'var(--status-warning-bg)',
+            color: tableStatus.tablesReady
+              ? 'var(--status-success)'
+              : 'var(--status-warning)',
             marginBottom: '1.25rem',
             fontSize: '0.9rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.65rem'
+            justifyContent: 'space-between',
+            gap: '0.75rem',
+            flexWrap: 'wrap'
           }}
         >
-          <ShieldCheck size={20} />
-          <div>
-            <strong>
-              สถานะปัจจุบัน:{' '}
-              {connected
-                ? 'เชื่อมต่อ Supabase Cloud Realtime แล้ว (พร้อมใช้งานข้ามมือถือ 200 เครื่อง)'
-                : 'โหมด Local Instant Demo (ทดสอบเปิดหลายแท็บและจำลองแขก 200 คนได้ทันที)'}
-            </strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <ShieldCheck size={20} />
+            <strong>{tableStatus.message}</strong>
           </div>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
+            onClick={verifyStatus}
+            disabled={checking}
+          >
+            <RefreshCw size={14} />
+            {checking ? 'กำลังตรวจสอบ...' : 'ตรวจสอบสถานะตารางอีกครั้ง'}
+          </button>
         </div>
 
         <form onSubmit={handleSave}>

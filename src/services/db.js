@@ -15,28 +15,43 @@ if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
   broadcastChannel = new BroadcastChannel('bluw_wedding_realtime_v1');
 }
 
+const DEFAULT_SUPABASE_URL = 'https://isegvrwoupoqguvzcvud.supabase.co';
+const DEFAULT_SUPABASE_KEY = 'sb_publishable_7H3hcI69lNcr314lZ9c-fw_cCuNHwpu';
+
+export function normalizeSupabaseUrl(rawUrl) {
+  return (rawUrl || '')
+    .trim()
+    .replace(/\/rest\/v1\/?$/i, '')
+    .replace(/\/+$/, '');
+}
+
 export function getSupabaseConfig() {
-  const envUrl = import.meta.env.VITE_SUPABASE_URL || '';
-  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-  if (envUrl && envKey && !envUrl.includes('your-project-id')) {
-    return { url: envUrl, anonKey: envKey, source: 'env' };
-  }
   try {
     const saved = localStorage.getItem(STORAGE_KEYS.SUPABASE_CFG);
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed.url && parsed.anonKey) {
-        return { url: parsed.url, anonKey: parsed.anonKey, source: 'local' };
+        return {
+          url: normalizeSupabaseUrl(parsed.url),
+          anonKey: parsed.anonKey.trim(),
+          source: 'local'
+        };
       }
     }
   } catch (e) {
     console.warn('Failed to read Supabase config:', e);
   }
+
+  const envUrl = normalizeSupabaseUrl(import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL);
+  const envKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_KEY).trim();
+  if (envUrl && envKey && !envUrl.includes('your-project-id')) {
+    return { url: envUrl, anonKey: envKey, source: 'env' };
+  }
   return { url: '', anonKey: '', source: 'none' };
 }
 
 export function saveSupabaseConfig(url, anonKey) {
-  const cleanUrl = (url || '').trim();
+  const cleanUrl = normalizeSupabaseUrl(url);
   const cleanKey = (anonKey || '').trim();
   if (!cleanUrl || !cleanKey) {
     localStorage.removeItem(STORAGE_KEYS.SUPABASE_CFG);
@@ -50,6 +65,33 @@ export function saveSupabaseConfig(url, anonKey) {
   supabaseClient = null;
   getSupabase();
   return true;
+}
+
+export async function checkSupabaseTablesStatus() {
+  const sb = getSupabase();
+  if (!sb) {
+    return { connected: false, tablesReady: false, message: 'ยังไม่ได้ตั้งค่า URL และ Key' };
+  }
+  try {
+    const { error } = await sb.from('games').select('id').limit(1);
+    if (error) {
+      if (error.code === 'PGRST205' || (error.message || '').includes('Could not find the table')) {
+        return {
+          connected: true,
+          tablesReady: false,
+          message: 'เชื่อมต่อ Supabase สำเร็จแล้ว แต่ยังไม่ได้รันคำสั่ง SQL สร้างตาราง (games, game_sessions, session_players)'
+        };
+      }
+      return { connected: true, tablesReady: false, message: error.message };
+    }
+    return {
+      connected: true,
+      tablesReady: true,
+      message: 'เชื่อมต่อ Supabase สำเร็จ และตารางฐานข้อมูลพร้อมใช้งานครบถ้วน!'
+    };
+  } catch (err) {
+    return { connected: false, tablesReady: false, message: err.message };
+  }
 }
 
 export function getSupabase() {
