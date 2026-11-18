@@ -58,42 +58,49 @@ export default function GuestMobileView({
     }
   }, [initialPin, activeSessions]);
 
-  // Sync live session & player state without race conditions
+  // Sync live session & player state without race conditions or overlapping requests
   useEffect(() => {
     if (!session?.pin || !player?.id) return;
     let isMounted = true;
+    let isFetching = false;
 
     const refreshLiveState = async () => {
+      if (isFetching) return;
       const currentPin = sessionPinRef.current;
       const currentPlayerId = playerIdRef.current;
       if (!currentPin || !currentPlayerId) return;
 
-      const latestSession = await getSessionByPin(currentPin);
-      if (!isMounted || !latestSession) return;
+      isFetching = true;
+      try {
+        const latestSession = await getSessionByPin(currentPin);
+        if (!isMounted || !latestSession) return;
 
-      setSession((prev) => {
-        if (
-          prev &&
-          (latestSession.current_question_index !== prev.current_question_index ||
-            latestSession.status !== prev.status)
-        ) {
-          setQuestionStartTime(Date.now());
+        setSession((prev) => {
+          if (
+            prev &&
+            (latestSession.current_question_index !== prev.current_question_index ||
+              latestSession.status !== prev.status)
+          ) {
+            setQuestionStartTime(Date.now());
+          }
+          return latestSession;
+        });
+
+        const playersList = await fetchSessionPlayers(latestSession.id);
+        if (!isMounted) return;
+        setRoomPlayers(playersList);
+
+        const me = playersList.find((p) => p.id === currentPlayerId);
+        if (me && playerIdRef.current === currentPlayerId) {
+          setPlayer(me);
         }
-        return latestSession;
-      });
-
-      const playersList = await fetchSessionPlayers(latestSession.id);
-      if (!isMounted) return;
-      setRoomPlayers(playersList);
-
-      const me = playersList.find((p) => p.id === currentPlayerId);
-      if (me && playerIdRef.current === currentPlayerId) {
-        setPlayer(me);
+      } finally {
+        isFetching = false;
       }
     };
 
     refreshLiveState();
-    const timer = setInterval(refreshLiveState, 2000);
+    const timer = setInterval(refreshLiveState, 2500);
     return () => {
       isMounted = false;
       clearInterval(timer);

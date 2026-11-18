@@ -17,11 +17,10 @@ import {
   createLiveSession,
   fetchSessionPlayers,
   getSessionByPin,
-  subscribeToRealtime,
   isSupabaseConnected
 } from './services/db';
 
-const ACTIVE_PIN_STORAGE_KEY = 'bluw_active_host_pin_v1';
+const ACTIVE_PIN_STORAGE_KEY = 'bluw_active_host_pin_v2';
 
 export default function App() {
   const [viewMode, setViewMode] = useState('admin'); // 'admin' | 'stage' | 'guest' | 'client'
@@ -35,53 +34,57 @@ export default function App() {
   const [dbOnline, setDbOnline] = useState(isSupabaseConnected());
 
   const activePinRef = useRef('');
-  const requestSeqRef = useRef(0);
+  const isFetchingAdminRef = useRef(false);
+  const isFetchingStageRef = useRef(false);
 
-  useEffect(() => {
-    activePinRef.current = activeSession?.pin || localStorage.getItem(ACTIVE_PIN_STORAGE_KEY) || '';
-  }, [activeSession?.pin]);
+  // 1. Load Admin Catalog (Games & Session History) — ONLY called on initial mount or explicit admin actions
+  const loadAdminCatalog = useCallback(async () => {
+    if (isFetchingAdminRef.current) return;
+    isFetchingAdminRef.current = true;
+    try {
+      const [gList, sList] = await Promise.all([
+        fetchGames(),
+        fetchSessionsHistory()
+      ]);
+      setGames(gList);
+      setSessions(sList);
+      setDbOnline(isSupabaseConnected());
 
-  const loadData = useCallback(async () => {
-    const seq = ++requestSeqRef.current;
-
-    const [gList, sList] = await Promise.all([
-      fetchGames(),
-      fetchSessionsHistory()
-    ]);
-
-    if (seq !== requestSeqRef.current) return;
-
-    setGames(gList);
-    setSessions(sList);
-    setDbOnline(isSupabaseConnected());
-
-    // Determine which active session PIN to sync
-    let targetPin = activePinRef.current;
-    if (!targetPin && sList.length > 0) {
-      const openSession = sList.find((s) => s.status !== 'finished');
-      if (openSession) {
-        targetPin = openSession.pin;
-        activePinRef.current = targetPin;
-      }
-    }
-
-    if (targetPin) {
-      const updatedSession = await getSessionByPin(targetPin);
-      if (updatedSession && seq === requestSeqRef.current) {
-        setActiveSession(updatedSession);
-        const pList = await fetchSessionPlayers(updatedSession.id);
-        if (seq === requestSeqRef.current) {
-          setActivePlayers(pList);
+      if (!activePinRef.current && sList.length > 0) {
+        const openSession = sList.find((s) => s.status !== 'finished');
+        if (openSession) {
+          activePinRef.current = openSession.pin;
+          setActiveSession(openSession);
         }
       }
+    } finally {
+      isFetchingAdminRef.current = false;
     }
   }, []);
 
-  // Check URL query params for QR Code Guest scan (?pin=XXXXXX) or Client Package link (?client=XXXX)
+  // 2. Refresh ONLY the Active Live Room (Session + Players) when on Stage view
+  const refreshActiveStageRoom = useCallback(async () => {
+    const targetPin = activePinRef.current;
+    if (!targetPin || isFetchingStageRef.current) return;
+    isFetchingStageRef.current = true;
+    try {
+      const updatedSession = await getSessionByPin(targetPin);
+      if (updatedSession) {
+        setActiveSession(updatedSession);
+        const pList = await fetchSessionPlayers(updatedSession.id);
+        setActivePlayers(pList);
+      }
+    } finally {
+      isFetchingStageRef.current = false;
+    }
+  }, []);
+
+  // Initial mount: check URL params and load catalog once
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const pinParam = params.get('pin');
     const clientParam = params.get('client');
+    const savedPin = localStorage.getItem(ACTIVE_PIN_STORAGE_KEY) || '';
 
     if (pinParam) {
       setGuestInitialPin(pinParam);
@@ -90,26 +93,22 @@ export default function App() {
     } else if (clientParam) {
       setClientInitialCode(clientParam);
       setViewMode('client');
+    } else if (savedPin) {
+      activePinRef.current = savedPin;
     }
-    loadData();
-  }, [loadData]);
 
-  // Realtime subscription + periodic sync for Stage view
+    loadAdminCatalog();
+  }, [loadAdminCatalog]);
+
+  // Poll ONLY when actively viewing the Stage Projector screen (every 2.5 seconds, guarded against overlap)
   useEffect(() => {
-    const unsub = subscribeToRealtime(() => {
-      loadData();
-    });
-    const pollInterval = setInterval(() => {
-      if (activePinRef.current) {
-        loadData();
-      }
+    if (viewMode !== 'stage') return;
+    refreshActiveStageRoom();
+    const timer = setInterval(() => {
+      refreshActiveStageRoom();
     }, 2500);
-
-    return () => {
-      unsub();
-      clearInterval(pollInterval);
-    };
-  }, [loadData]);
+    return () => clearInterval(timer);
+  }, [viewMode, refreshActiveStageRoom]);
 
   // Apply dynamic wedding/seminar theme attribute
   useEffect(() => {
@@ -124,14 +123,14 @@ export default function App() {
     setActiveSession(newSession);
     setActivePlayers([]);
     setGuestInitialPin(newSession.pin);
-    await loadData();
     setViewMode('stage');
+    await loadAdminCatalog();
   };
 
   const handleOpenStageView = async () => {
     if (activeSession) {
+      activePinRef.current = activeSession.pin;
       setViewMode('stage');
-      await loadData();
       return;
     }
     const existingOpen = sessions.find((s) => s.status !== 'finished');
@@ -139,8 +138,6 @@ export default function App() {
       activePinRef.current = existingOpen.pin;
       localStorage.setItem(ACTIVE_PIN_STORAGE_KEY, existingOpen.pin);
       setActiveSession(existingOpen);
-      const pList = await fetchSessionPlayers(existingOpen.id);
-      setActivePlayers(pList);
       setGuestInitialPin(existingOpen.pin);
       setViewMode('stage');
       return;
@@ -154,7 +151,13 @@ export default function App() {
     <div>
       {/* Top Global Navigation */}
       <header className="top-navbar">
-        <div className="brand-group" onClick={() => setViewMode('admin')}>
+        <div
+          className="brand-group"
+          onClick={() => {
+            setViewMode('admin');
+            loadAdminCatalog();
+          }}
+        >
           <div className="brand-emblem">B</div>
           <div>
             <div className="brand-title">BLUW Wedding Quiz & Bingo</div>
@@ -169,7 +172,10 @@ export default function App() {
             type="button"
             id="nav-btn-admin"
             className={`nav-pill-btn ${viewMode === 'admin' ? 'active' : ''}`}
-            onClick={() => setViewMode('admin')}
+            onClick={() => {
+              setViewMode('admin');
+              loadAdminCatalog();
+            }}
           >
             <LayoutDashboard size={16} />
             ระบบหลังบ้านนายพิธี
@@ -223,7 +229,7 @@ export default function App() {
           <AdminDashboard
             games={games}
             sessions={sessions}
-            onRefresh={loadData}
+            onRefresh={loadAdminCatalog}
             onLaunchSession={handleLaunchLiveSession}
             onOpenClientPortal={() => setViewMode('client')}
           />
@@ -233,12 +239,15 @@ export default function App() {
           <HostStageView
             session={activeSession}
             players={activePlayers}
-            onRefreshSession={loadData}
+            onRefreshSession={refreshActiveStageRoom}
             onOpenGuestPreview={(pin) => {
               setGuestInitialPin(pin);
               setViewMode('guest');
             }}
-            onBackToAdmin={() => setViewMode('admin')}
+            onBackToAdmin={() => {
+              setViewMode('admin');
+              loadAdminCatalog();
+            }}
           />
         )}
 
@@ -246,7 +255,7 @@ export default function App() {
           <GuestMobileView
             initialPin={guestInitialPin || activeSession?.pin || ''}
             activeSessions={sessions}
-            onPlayerJoined={loadData}
+            onPlayerJoined={refreshActiveStageRoom}
           />
         )}
 
@@ -263,7 +272,7 @@ export default function App() {
       {showSupabaseModal && (
         <SupabaseModal
           onClose={() => setShowSupabaseModal(false)}
-          onSaved={loadData}
+          onSaved={loadAdminCatalog}
         />
       )}
     </div>

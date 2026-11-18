@@ -2,18 +2,24 @@ import { createClient } from '@supabase/supabase-js';
 import { DEFAULT_GAMES, DEFAULT_HISTORY_SESSIONS, WEDDING_AVATARS } from '../data/defaultGames';
 
 const STORAGE_KEYS = {
-  GAMES: 'bluw_wedding_games_v1',
-  SESSIONS: 'bluw_wedding_sessions_v1',
-  PLAYERS: 'bluw_wedding_players_v1',
+  GAMES: 'bluw_wedding_games_v2',
+  SESSIONS: 'bluw_wedding_sessions_v2',
+  PLAYERS: 'bluw_wedding_players_v2',
   SUPABASE_CFG: 'bluw_supabase_config_v1'
 };
 
-let supabaseClient = null;
-let broadcastChannel = null;
-
-if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
-  broadcastChannel = new BroadcastChannel('bluw_wedding_realtime_v1');
+// Clean up legacy v1 keys that could hold stale pre-Supabase data
+if (typeof window !== 'undefined') {
+  try {
+    localStorage.removeItem('bluw_wedding_games_v1');
+    localStorage.removeItem('bluw_wedding_sessions_v1');
+    localStorage.removeItem('bluw_wedding_players_v1');
+  } catch {
+    // Ignore
+  }
 }
+
+let supabaseClient = null;
 
 const DEFAULT_SUPABASE_URL = 'https://isegvrwoupoqguvzcvud.supabase.co';
 const DEFAULT_SUPABASE_KEY = 'sb_publishable_7H3hcI69lNcr314lZ9c-fw_cCuNHwpu';
@@ -102,7 +108,7 @@ export function getSupabase() {
       supabaseClient = createClient(cfg.url, cfg.anonKey, {
         realtime: {
           params: {
-            eventsPerSecond: 20
+            eventsPerSecond: 10
           }
         }
       });
@@ -116,19 +122,6 @@ export function getSupabase() {
 
 export function isSupabaseConnected() {
   return Boolean(getSupabase());
-}
-
-function emitLocalRealtime(event, payload) {
-  if (broadcastChannel) {
-    try {
-      broadcastChannel.postMessage({ event, payload, ts: Date.now() });
-    } catch {
-      // Ignore broadcast channel errors
-    }
-  }
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('bluw-realtime', { detail: { event, payload } }));
-  }
 }
 
 // ============================================================================
@@ -276,7 +269,7 @@ export function countBingoLines(markedArray, gridSize) {
 }
 
 // ============================================================================
-// LOCAL STORAGE HELPERS (Silent Cache vs Event-Emitting Mutations)
+// LOCAL STORAGE HELPERS (Pure Silent Cache - Zero Automatic Event Loops)
 // ============================================================================
 
 function getLocalGames() {
@@ -296,7 +289,7 @@ function cacheLocalGames(games) {
   try {
     localStorage.setItem(STORAGE_KEYS.GAMES, JSON.stringify(games));
   } catch {
-    // Ignore storage quota errors
+    // Ignore storage errors
   }
 }
 
@@ -317,7 +310,7 @@ function cacheLocalSessions(sessions) {
   try {
     localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
   } catch {
-    // Ignore storage quota errors
+    // Ignore storage errors
   }
 }
 
@@ -334,54 +327,34 @@ function cacheLocalPlayers(players) {
   try {
     localStorage.setItem(STORAGE_KEYS.PLAYERS, JSON.stringify(players));
   } catch {
-    // Ignore storage quota errors
+    // Ignore storage errors
   }
 }
 
-function mergePlayersList(localList, remoteList, sessionId) {
-  const byId = new Map();
-  localList
-    .filter((p) => !sessionId || p.session_id === sessionId)
-    .forEach((p) => byId.set(p.id, p));
-  remoteList
-    .filter((p) => !sessionId || p.session_id === sessionId)
-    .forEach((p) => byId.set(p.id, p));
-
-  return Array.from(byId.values()).sort((a, b) => {
-    const tA = new Date(a.joined_at || 0).getTime();
-    const tB = new Date(b.joined_at || 0).getTime();
-    if (tA !== tB) return tA - tB;
-    return String(a.id).localeCompare(String(b.id));
-  });
-}
-
 // ============================================================================
-// GAMES CRUD (Backoffice & Client Package Lookup)
+// GAMES CRUD (Backoffice & Client Package Lookup — Pure Read, No Side Effects)
 // ============================================================================
 
 export async function fetchGames() {
   const sb = getSupabase();
-  const localGames = getLocalGames();
   if (sb) {
     try {
       const { data, error } = await sb
         .from('games')
         .select('*')
         .order('created_at', { ascending: false });
-      if (!error && Array.isArray(data) && data.length > 0) {
-        // Silent cache update — DO NOT emit realtime event on read!
-        cacheLocalGames(data);
-        return data;
-      }
-      if (!error && Array.isArray(data) && data.length === 0) {
-        await sb.from('games').upsert(localGames);
-        return localGames;
+      if (!error && Array.isArray(data)) {
+        if (data.length > 0) {
+          cacheLocalGames(data);
+          return data;
+        }
+        return DEFAULT_GAMES;
       }
     } catch (e) {
       console.warn('Supabase fetchGames fallback to local:', e);
     }
   }
-  return localGames;
+  return getLocalGames();
 }
 
 export async function saveGame(gameData) {
@@ -418,7 +391,6 @@ export async function saveGame(gameData) {
       console.warn('Supabase saveGame fallback:', e);
     }
   }
-  emitLocalRealtime('games_updated', { gameId: id });
   return record;
 }
 
@@ -433,7 +405,6 @@ export async function deleteGame(gameId) {
       console.warn('Supabase deleteGame error:', e);
     }
   }
-  emitLocalRealtime('games_updated', { gameId });
 }
 
 export async function findGameByClientCode(code) {
@@ -497,21 +468,19 @@ export async function createLiveSession(game) {
     }
   }
 
-  emitLocalRealtime('session_created', { sessionId, pin });
   return session;
 }
 
 export async function fetchSessionsHistory() {
   const sb = getSupabase();
-  const localSessions = getLocalSessions();
   if (sb) {
     try {
       const { data, error } = await sb
         .from('game_sessions')
         .select('*')
-        .order('started_at', { ascending: false });
+        .order('started_at', { ascending: false })
+        .limit(50);
       if (!error && Array.isArray(data) && data.length > 0) {
-        // Silent cache update — DO NOT emit realtime event on read!
         cacheLocalSessions(data);
         return data;
       }
@@ -519,7 +488,7 @@ export async function fetchSessionsHistory() {
       console.warn('Supabase fetchSessionsHistory fallback:', e);
     }
   }
-  return localSessions;
+  return getLocalSessions();
 }
 
 export async function getSessionByPin(pin) {
@@ -569,17 +538,15 @@ export async function updateSessionState(sessionId, patch) {
     }
   }
 
-  emitLocalRealtime('session_state_changed', { sessionId, patch });
   return updated;
 }
 
 // ============================================================================
-// GUEST PLAYERS & ANSWERS (Supports 200 Concurrent Players per Session)
+// GUEST PLAYERS & ANSWERS (Pure Read / Write without Side-Effect Loops)
 // ============================================================================
 
 export async function fetchSessionPlayers(sessionId) {
   if (!sessionId) return [];
-  const localForSession = getLocalPlayers().filter((p) => p.session_id === sessionId);
 
   const sb = getSupabase();
   if (sb) {
@@ -590,26 +557,13 @@ export async function fetchSessionPlayers(sessionId) {
         .eq('session_id', sessionId)
         .order('joined_at', { ascending: true });
       if (!error && Array.isArray(data)) {
-        const remoteIds = new Set(data.map((p) => p.id));
-        const missingOnRemote = localForSession.filter((p) => !remoteIds.has(p.id));
-        if (missingOnRemote.length > 0) {
-          try {
-            await sb.from('session_players').upsert(missingOnRemote);
-          } catch (syncErr) {
-            console.warn('Auto-sync local players to Supabase warning:', syncErr);
-          }
-        }
-
-        const mergedSessionPlayers = mergePlayersList(localForSession, data, sessionId);
-        const otherSessionsPlayers = getLocalPlayers().filter((p) => p.session_id !== sessionId);
-        cacheLocalPlayers([...otherSessionsPlayers, ...mergedSessionPlayers]);
-        return mergedSessionPlayers;
+        return data;
       }
     } catch (e) {
       console.warn('Supabase fetchSessionPlayers fallback:', e);
     }
   }
-  return mergePlayersList(localForSession, [], sessionId);
+  return getLocalPlayers().filter((p) => p.session_id === sessionId);
 }
 
 export async function joinSessionAsGuest({ pin, nickname, avatar, tableName, wishMessage }) {
@@ -656,29 +610,23 @@ export async function joinSessionAsGuest({ pin, nickname, avatar, tableName, wis
     joined_at: new Date().toISOString()
   };
 
-  // 1. Insert into Supabase FIRST so remote reads immediately include this guest
   const sb = getSupabase();
   if (sb) {
-    try {
-      await sb.from('session_players').insert(player);
-    } catch (e) {
-      console.warn('Supabase joinSessionAsGuest fallback:', e);
+    const { error } = await sb.from('session_players').insert(player);
+    if (error) {
+      console.warn('Supabase insert player error:', error);
     }
   }
 
-  // 2. Save to local cache without duplicate IDs
   const allLocal = getLocalPlayers().filter((p) => p.id !== player.id);
   allLocal.push(player);
   cacheLocalPlayers(allLocal);
 
-  // 3. Update total player_count on the session
   const updatedCount = currentPlayers.length + 1;
   await updateSessionState(session.id, {
     player_count: updatedCount
   });
 
-  // 4. Emit local & cross-tab realtime event AFTER DB writes finish
-  emitLocalRealtime('player_joined', { sessionId: session.id, player });
   return { session: { ...session, player_count: updatedCount }, player };
 }
 
@@ -783,7 +731,6 @@ export async function submitQuizAnswer({ session, playerId, questionIndex, optio
     }
   }
 
-  emitLocalRealtime('answer_submitted', { sessionId: session.id, playerId, questionIndex });
   return updatedPlayer;
 }
 
@@ -844,7 +791,6 @@ export async function toggleClassicBingoCell({ session, playerId, cellIndex }) {
     }
   }
 
-  emitLocalRealtime('bingo_card_updated', { sessionId: session.id, playerId });
   return updatedPlayer;
 }
 
@@ -925,7 +871,6 @@ export async function simulateGuestsBatch(session, count = 25) {
     player_count: currentPlayers.length + newPlayers.length
   });
 
-  emitLocalRealtime('players_updated', { sessionId: session.id });
   return [...currentPlayers, ...newPlayers];
 }
 
@@ -1006,8 +951,6 @@ export async function simulateCrowdAnswersForQuestion(session, questionIndex) {
       console.warn('Supabase simulateCrowdAnswersForQuestion fallback:', e);
     }
   }
-
-  emitLocalRealtime('answer_submitted', { sessionId: session.id, questionIndex });
 }
 
 export async function simulateCrowdMarkDrawnNumber(session, drawnLabel) {
@@ -1053,53 +996,4 @@ export async function simulateCrowdMarkDrawnNumber(session, drawnLabel) {
       console.warn('Supabase simulateCrowdMarkDrawnNumber fallback:', e);
     }
   }
-
-  emitLocalRealtime('bingo_card_updated', { sessionId: session.id });
-}
-
-export function subscribeToRealtime(onEvent) {
-  let debounceTimer = null;
-  const triggerDebounced = (detail) => {
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      onEvent(detail);
-    }, 180);
-  };
-
-  const handler = (e) => {
-    if (e.detail) triggerDebounced(e.detail);
-  };
-  const bcHandler = (msg) => {
-    if (msg.data) triggerDebounced(msg.data);
-  };
-
-  window.addEventListener('bluw-realtime', handler);
-  if (broadcastChannel) {
-    broadcastChannel.addEventListener('message', bcHandler);
-  }
-
-  let sbChannel = null;
-  const sb = getSupabase();
-  if (sb) {
-    sbChannel = sb
-      .channel('public-game-events')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'game_sessions' }, (payload) => {
-        triggerDebounced({ event: 'supabase_session_change', payload });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_players' }, (payload) => {
-        triggerDebounced({ event: 'supabase_player_change', payload });
-      })
-      .subscribe();
-  }
-
-  return () => {
-    if (debounceTimer) clearTimeout(debounceTimer);
-    window.removeEventListener('bluw-realtime', handler);
-    if (broadcastChannel) {
-      broadcastChannel.removeEventListener('message', bcHandler);
-    }
-    if (sbChannel && sb) {
-      sb.removeChannel(sbChannel);
-    }
-  };
 }
