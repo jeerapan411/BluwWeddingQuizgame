@@ -335,6 +335,70 @@ function cacheLocalPlayers(players) {
 // GAMES CRUD (Backoffice & Client Package Lookup — Pure Read, No Side Effects)
 // ============================================================================
 
+function packGameForSupabase(record) {
+  const musicMeta = {
+    music_mode: record.music_mode || 'builtin',
+    music_lobby_yt: record.music_lobby_yt || '',
+    music_play_yt: record.music_play_yt || '',
+    music_winner_yt: record.music_winner_yt || ''
+  };
+
+  const cleanQuestions = Array.isArray(record.questions)
+    ? record.questions.filter((q) => !q?.__musicMetaOnly)
+    : [];
+
+  const packedQuestions =
+    cleanQuestions.length > 0
+      ? cleanQuestions.map((q, idx) => (idx === 0 ? { ...q, __musicMeta: musicMeta } : q))
+      : [{ __musicMetaOnly: true, __musicMeta: musicMeta }];
+
+  return {
+    id: record.id,
+    title: record.title,
+    subtitle: record.subtitle || '',
+    event_type: record.event_type || 'wedding',
+    game_mode: record.game_mode || 'quiz',
+    bingo_submode: record.bingo_submode || 'quiz_grid',
+    bingo_grid_size: Number(record.bingo_grid_size) || 4,
+    bingo_fill_mode: record.bingo_fill_mode || 'random_card',
+    theme: record.theme || 'rose_gold',
+    couple_names: record.couple_names || '',
+    event_date: record.event_date || '',
+    client_code: record.client_code || '',
+    package_name: record.package_name || '',
+    max_players: Number(record.max_players) || 200,
+    questions: packedQuestions,
+    bingo_items: Array.isArray(record.bingo_items) ? record.bingo_items : [],
+    play_count: Number(record.play_count) || 0,
+    created_at: record.created_at,
+    updated_at: record.updated_at
+  };
+}
+
+function unpackGameFromSupabase(row) {
+  if (!row) return row;
+  const rawQuestions = Array.isArray(row.questions) ? row.questions : [];
+  const metaHolder = rawQuestions.find((q) => q?.__musicMeta);
+  const musicMeta = metaHolder?.__musicMeta || {};
+  const cleanQuestions = rawQuestions
+    .filter((q) => !q?.__musicMetaOnly)
+    .map((q) => {
+      if (!q || !q.__musicMeta) return q;
+      const copy = { ...q };
+      delete copy.__musicMeta;
+      return copy;
+    });
+
+  return {
+    ...row,
+    questions: cleanQuestions,
+    music_mode: row.music_mode || musicMeta.music_mode || 'builtin',
+    music_lobby_yt: row.music_lobby_yt || musicMeta.music_lobby_yt || '',
+    music_play_yt: row.music_play_yt || musicMeta.music_play_yt || '',
+    music_winner_yt: row.music_winner_yt || musicMeta.music_winner_yt || ''
+  };
+}
+
 export async function fetchGames() {
   const sb = getSupabase();
   if (sb) {
@@ -345,8 +409,9 @@ export async function fetchGames() {
         .order('created_at', { ascending: false });
       if (!error && Array.isArray(data)) {
         if (data.length > 0) {
-          cacheLocalGames(data);
-          return data;
+          const unpacked = data.map(unpackGameFromSupabase);
+          cacheLocalGames(unpacked);
+          return unpacked;
         }
         return DEFAULT_GAMES;
       }
@@ -386,7 +451,7 @@ export async function saveGame(gameData) {
   const sb = getSupabase();
   if (sb) {
     try {
-      await sb.from('games').upsert(record);
+      await sb.from('games').upsert(packGameForSupabase(record));
     } catch (e) {
       console.warn('Supabase saveGame fallback:', e);
     }

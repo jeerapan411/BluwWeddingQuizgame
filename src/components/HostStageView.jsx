@@ -14,7 +14,9 @@ import {
   RotateCw,
   Award,
   ArrowLeft,
-  Heart
+  Heart,
+  Download,
+  X
 } from 'lucide-react';
 import {
   updateSessionState,
@@ -24,6 +26,11 @@ import {
   countBingoLines,
   shuffleArray
 } from '../services/db';
+import StageMusicBar from './StageMusicBar';
+import {
+  generateSouvenirCardDataUrl,
+  downloadOrShareSouvenirCard
+} from '../utils/souvenirCard';
 
 const CHOICE_SHAPES = ['▲', '◆', '●', '■'];
 
@@ -37,6 +44,7 @@ export default function HostStageView({
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [timeLeft, setTimeLeft] = useState(20);
   const [isSpinningNumber, setIsSpinningNumber] = useState(false);
+  const [previewCardData, setPreviewCardData] = useState(null);
 
   const game = session?.game_snapshot || {};
   const questions = game.questions || [];
@@ -234,65 +242,98 @@ export default function HostStageView({
     if (onRefreshSession) onRefreshSession();
   };
 
+  const handleOpenWinnerSouvenirCard = async (winnerPlayer, rank) => {
+    const dataUrl = await generateSouvenirCardDataUrl({
+      session,
+      player: winnerPlayer,
+      rank,
+      totalPlayers: players.length || 1
+    });
+    setPreviewCardData({
+      dataUrl,
+      nickname: winnerPlayer.nickname,
+      rank
+    });
+  };
+
+  const handleUpdateSessionMusic = async (musicPatch) => {
+    const nextSnapshot = {
+      ...(session.game_snapshot || {}),
+      ...musicPatch
+    };
+    await updateSessionState(session.id, {
+      game_snapshot: nextSnapshot
+    });
+    if (onRefreshSession) onRefreshSession();
+  };
+
   if (!session) return null;
 
   return (
     <div className="stage-screen">
       {/* Stage Top Bar */}
-      <header className="stage-topbar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            style={{
-              background: 'rgba(255,255,255,0.1)',
-              color: '#fff',
-              borderColor: 'rgba(255,255,255,0.2)'
-            }}
-            onClick={onBackToAdmin}
-          >
-            <ArrowLeft size={16} />
-            กลับหลังบ้าน
-          </button>
-          <div>
-            <div className="stage-event-title">{session.game_title}</div>
-            <div style={{ fontSize: '0.84rem', color: 'rgba(255,255,255,0.7)' }}>
-              {isBingo
-                ? isNumberBingo
-                  ? `โหมด: บิงโกตัวเลขมงคล (${session.bingo_grid_size}x${session.bingo_grid_size})`
-                  : `โหมด: บิงโกคำถามบ่าวสาว (${
-                      session.bingo_fill_mode === 'sequential'
-                        ? 'ตอบถูกเรียงช่องตามลำดับ'
-                        : 'สุ่มตำแหน่งการ์ด'
-                    })`
-                : 'โหมด: เกมตอบคำถามชิงความไวสไตล์ Kahoot'}
+      <div>
+        <header className="stage-topbar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                color: '#fff',
+                borderColor: 'rgba(255,255,255,0.2)'
+              }}
+              onClick={onBackToAdmin}
+            >
+              <ArrowLeft size={16} />
+              กลับหลังบ้าน
+            </button>
+            <div>
+              <div className="stage-event-title">{session.game_title}</div>
+              <div style={{ fontSize: '0.84rem', color: 'rgba(255,255,255,0.7)' }}>
+                {isBingo
+                  ? isNumberBingo
+                    ? `โหมด: บิงโกตัวเลขมงคล (${session.bingo_grid_size}x${session.bingo_grid_size})`
+                    : `โหมด: บิงโกคำถามบ่าวสาว (${
+                        session.bingo_fill_mode === 'sequential'
+                          ? 'ตอบถูกเรียงช่องตามลำดับ'
+                          : 'สุ่มตำแหน่งการ์ด'
+                      })`
+                  : 'โหมด: เกมตอบคำถามชิงความไวสไตล์ Kahoot'}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          {session.couple_names && (
-            <span className="stage-couple-badge">
-              <Heart size={15} />
-              {session.couple_names}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {session.couple_names && (
+              <span className="stage-couple-badge">
+                <Heart size={15} />
+                {session.couple_names}
+              </span>
+            )}
+            <span
+              className="stage-couple-badge"
+              style={{ background: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.25)' }}
+            >
+              PIN ห้อง: <strong style={{ fontSize: '1.1rem' }}>{session.pin}</strong>
             </span>
-          )}
-          <span
-            className="stage-couple-badge"
-            style={{ background: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.25)' }}
-          >
-            PIN ห้อง: <strong style={{ fontSize: '1.1rem' }}>{session.pin}</strong>
-          </span>
-          <button
-            type="button"
-            className="btn btn-gold"
-            onClick={() => onOpenGuestPreview(session.pin)}
-          >
-            <Smartphone size={16} />
-            จำลองหน้าจอมือถือแขก
-          </button>
-        </div>
-      </header>
+            <button
+              type="button"
+              className="btn btn-gold"
+              onClick={() => onOpenGuestPreview(session.pin)}
+            >
+              <Smartphone size={16} />
+              จำลองหน้าจอมือถือแขก
+            </button>
+          </div>
+        </header>
+
+        {/* 3-Phase Wedding Theme Music Controller Bar (Lobby / Gameplay / Winner) */}
+        <StageMusicBar
+          session={session}
+          onUpdateSessionMusic={handleUpdateSessionMusic}
+        />
+      </div>
 
       {/* ====================================================================
           PHASE 1: WAITING LOBBY WITH GIANT QR CODE & GUEST STREAM
@@ -912,9 +953,24 @@ export default function HostStageView({
                 <div style={{ fontWeight: 700, fontSize: '1.15rem', margin: '0.25rem 0' }}>
                   {sortedLeaderboard[1].nickname}
                 </div>
-                <div style={{ fontSize: '0.9rem', opacity: 0.85 }}>
+                <div style={{ fontSize: '0.9rem', opacity: 0.85, marginBottom: '0.75rem' }}>
                   {(sortedLeaderboard[1].score || 0).toLocaleString()} คะแนน
                 </div>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{
+                    padding: '0.35rem 0.75rem',
+                    fontSize: '0.76rem',
+                    background: 'rgba(255,255,255,0.14)',
+                    color: '#fff',
+                    borderColor: 'rgba(255,255,255,0.28)'
+                  }}
+                  onClick={() => handleOpenWinnerSouvenirCard(sortedLeaderboard[1], 2)}
+                >
+                  <Download size={13} />
+                  บันทึกการ์ดที่ระลึก
+                </button>
               </div>
             )}
 
@@ -935,9 +991,25 @@ export default function HostStageView({
                 <div style={{ fontWeight: 700, fontSize: '1.35rem', margin: '0.3rem 0' }}>
                   {sortedLeaderboard[0].nickname}
                 </div>
-                <div style={{ fontSize: '1.05rem', color: '#f6d59e', fontWeight: 600 }}>
+                <div
+                  style={{
+                    fontSize: '1.05rem',
+                    color: '#f6d59e',
+                    fontWeight: 600,
+                    marginBottom: '0.85rem'
+                  }}
+                >
                   {(sortedLeaderboard[0].score || 0).toLocaleString()} คะแนน
                 </div>
+                <button
+                  type="button"
+                  className="btn btn-gold"
+                  style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
+                  onClick={() => handleOpenWinnerSouvenirCard(sortedLeaderboard[0], 1)}
+                >
+                  <Download size={14} />
+                  บันทึกการ์ดแชมป์อันดับ 1
+                </button>
               </div>
             )}
 
@@ -951,20 +1023,87 @@ export default function HostStageView({
                 <div style={{ fontWeight: 700, fontSize: '1.15rem', margin: '0.25rem 0' }}>
                   {sortedLeaderboard[2].nickname}
                 </div>
-                <div style={{ fontSize: '0.9rem', opacity: 0.85 }}>
+                <div style={{ fontSize: '0.9rem', opacity: 0.85, marginBottom: '0.75rem' }}>
                   {(sortedLeaderboard[2].score || 0).toLocaleString()} คะแนน
                 </div>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{
+                    padding: '0.35rem 0.75rem',
+                    fontSize: '0.76rem',
+                    background: 'rgba(255,255,255,0.14)',
+                    color: '#fff',
+                    borderColor: 'rgba(255,255,255,0.28)'
+                  }}
+                  onClick={() => handleOpenWinnerSouvenirCard(sortedLeaderboard[2], 3)}
+                >
+                  <Download size={13} />
+                  บันทึกการ์ดที่ระลึก
+                </button>
               </div>
             )}
           </div>
 
-          <div style={{ marginTop: '1.5rem' }}>
+          <p style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.75)', marginTop: '0.5rem' }}>
+            📱 แขกทุกท่านในงานสามารถกดปุ่ม <strong>"บันทึกภาพการ์ดที่ระลึกเข้ามือถือ"</strong> บนหน้าจอมือถือของตนเองได้ทันที!
+          </p>
+
+          <div style={{ marginTop: '1.25rem' }}>
             <button
               type="button"
               className="btn btn-gold btn-lg"
               onClick={onBackToAdmin}
             >
               ดูรายงานสรุปผลฉบับเต็มในระบบหลังบ้าน
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Preview & Download Winner Souvenir Card on Stage */}
+      {previewCardData && (
+        <div className="modal-backdrop" onClick={() => setPreviewCardData(null)}>
+          <div
+            className="modal-content"
+            style={{ maxWidth: '460px', textAlign: 'center', color: 'var(--text-primary)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem' }}>
+                การ์ดที่ระลึกผู้ชนะ: {previewCardData.nickname}
+              </h3>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setPreviewCardData(null)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <img
+              src={previewCardData.dataUrl}
+              alt="Souvenir Winner Card"
+              style={{
+                width: '100%',
+                borderRadius: 'var(--radius-lg)',
+                boxShadow: 'var(--shadow-md)',
+                marginBottom: '1rem'
+              }}
+            />
+            <button
+              type="button"
+              className="btn btn-primary btn-lg"
+              style={{ width: '100%' }}
+              onClick={() =>
+                downloadOrShareSouvenirCard(
+                  previewCardData.dataUrl,
+                  `winner-rank${previewCardData.rank}-${previewCardData.nickname}.png`
+                )
+              }
+            >
+              <Download size={18} />
+              บันทึกภาพการ์ดผู้ชนะ (PNG)
             </button>
           </div>
         </div>

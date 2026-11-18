@@ -9,7 +9,8 @@ import {
   Grid,
   Send,
   Users,
-  UserPlus
+  UserPlus,
+  Download
 } from 'lucide-react';
 import { WEDDING_AVATARS } from '../data/defaultGames';
 import {
@@ -20,6 +21,10 @@ import {
   toggleClassicBingoCell,
   countBingoLines
 } from '../services/db';
+import {
+  generateSouvenirCardDataUrl,
+  downloadOrShareSouvenirCard
+} from '../utils/souvenirCard';
 
 const CHOICE_SHAPES = ['▲', '◆', '●', '■'];
 
@@ -40,9 +45,50 @@ export default function GuestMobileView({
   const [player, setPlayer] = useState(null);
   const [roomPlayers, setRoomPlayers] = useState([]);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+  const [souvenirCardUrl, setSouvenirCardUrl] = useState('');
 
   const playerIdRef = useRef('');
   const sessionPinRef = useRef('');
+
+  const myRank = useMemo(() => {
+    if (!player?.id || roomPlayers.length === 0) return 1;
+    const isBingoMode = session?.game_mode === 'bingo';
+    const sorted = [...roomPlayers].sort((a, b) => {
+      if (isBingoMode && b.is_bingo_winner !== a.is_bingo_winner) {
+        return b.is_bingo_winner ? 1 : -1;
+      }
+      if ((b.score || 0) !== (a.score || 0)) {
+        return (b.score || 0) - (a.score || 0);
+      }
+      return (b.correct_count || 0) - (a.correct_count || 0);
+    });
+    const idx = sorted.findIndex((p) => p.id === player.id);
+    return idx >= 0 ? idx + 1 : 1;
+  }, [player?.id, player?.score, player?.is_bingo_winner, roomPlayers, session?.game_mode]);
+
+  // Auto-generate downloadable souvenir card when game finishes or player achieves BINGO
+  useEffect(() => {
+    if (!session || !player) return;
+    if (session.status === 'finished' || player.is_bingo_winner) {
+      generateSouvenirCardDataUrl({
+        session,
+        player,
+        rank: myRank,
+        totalPlayers: Math.max(1, roomPlayers.length)
+      })
+        .then((url) => setSouvenirCardUrl(url))
+        .catch((err) => console.warn('Souvenir card generation error:', err));
+    }
+  }, [
+    session?.status,
+    player?.id,
+    player?.score,
+    player?.correct_count,
+    player?.bingo_lines,
+    player?.is_bingo_winner,
+    myRank,
+    roomPlayers.length
+  ]);
 
   useEffect(() => {
     playerIdRef.current = player?.id || '';
@@ -667,19 +713,73 @@ export default function GuestMobileView({
           </div>
         )}
 
-        {/* GAME FINISHED SUMMARY ON MOBILE */}
-        {session.status === 'finished' && (
+        {/* SOUVENIR CARD & SAVE TO PHONE (SHOWN ON GAME FINISH OR WHEN BINGO WON) */}
+        {(session.status === 'finished' || player.is_bingo_winner) && (
           <div className="guest-card" style={{ textAlign: 'center', marginTop: '1rem' }}>
-            <Trophy size={40} color="var(--accent-secondary)" style={{ marginBottom: '0.5rem' }} />
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem' }}>
-              จบเกมเรียบร้อยแล้ว ขอบคุณที่ร่วมสนุก!
+            <Trophy size={38} color="var(--accent-secondary)" style={{ marginBottom: '0.4rem' }} />
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.35rem' }}>
+              {session.status === 'finished'
+                ? '🎉 จบเกมแล้ว! การ์ดที่ระลึกของคุณพร้อมแล้ว'
+                : '🏆 ยินดีด้วย! การ์ดผู้พิชิต BINGO ของคุณ'}
             </h2>
-            <p style={{ fontSize: '0.95rem', marginTop: '0.4rem' }}>
-              คะแนนรวมของคุณคือ{' '}
-              <strong style={{ color: 'var(--accent-primary)', fontSize: '1.2rem' }}>
+            <p
+              style={{
+                fontSize: '0.88rem',
+                color: 'var(--text-secondary)',
+                marginTop: '0.25rem',
+                marginBottom: '1rem'
+              }}
+            >
+              คุณได้ลำดับที่ <strong>#{myRank}</strong> (คะแนนรวม{' '}
+              <strong style={{ color: 'var(--accent-primary)' }}>
                 {(player.score || 0).toLocaleString()} คะแนน
               </strong>
+              ) กดบันทึกภาพเก็บไว้เป็นที่ระลึกหรือแชร์ลงโซเชียลได้เลย!
             </p>
+
+            {souvenirCardUrl && (
+              <div style={{ marginBottom: '1rem' }}>
+                <img
+                  src={souvenirCardUrl}
+                  alt="การ์ดที่ระลึกงานแต่ง"
+                  style={{
+                    width: '100%',
+                    borderRadius: 'var(--radius-lg)',
+                    boxShadow: 'var(--shadow-md)',
+                    border: '1px solid var(--border-subtle)'
+                  }}
+                />
+              </div>
+            )}
+
+            <button
+              type="button"
+              id="btn-save-souvenir-card"
+              className="btn btn-primary btn-lg"
+              style={{ width: '100%', marginBottom: '0.5rem' }}
+              onClick={async () => {
+                let url = souvenirCardUrl;
+                if (!url) {
+                  url = await generateSouvenirCardDataUrl({
+                    session,
+                    player,
+                    rank: myRank,
+                    totalPlayers: Math.max(1, roomPlayers.length)
+                  });
+                  setSouvenirCardUrl(url);
+                }
+                await downloadOrShareSouvenirCard(
+                  url,
+                  `souvenir-${session.pin}-${player.nickname}.png`
+                );
+              }}
+            >
+              <Download size={19} />
+              บันทึกภาพการ์ดที่ระลึกเข้ามือถือ
+            </button>
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+              💡 เคล็ดลับ: บน iPhone หรือแอป LINE สามารถแตะค้างที่รูปการ์ดด้านบนแล้วเลือก "บันทึกรูปภาพ" ได้เช่นกัน
+            </div>
           </div>
         )}
       </div>
